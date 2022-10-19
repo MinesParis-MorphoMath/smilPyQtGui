@@ -73,6 +73,7 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QStatusBar, QTextEdit, QWidget)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout
 
+import globals as g
 
 # -----------------------------------------------------------------------------
 #
@@ -154,19 +155,66 @@ class smilCanvas(QLabel):
     self.pixmap = QPixmap(width, height)
     self.pixmap.fill(Qt.GlobalColor.white)
     self.setPixmap(self.pixmap)
-    #image = QImage(imArray, self.w, self.h, QImage.Format_Indexed8)
-    #self.pixmap.setPixmap(QPixmap.fromImage(image))
 
-    #self.pixmap.fill(Qt.GlobalColor.white)
-    #self.setPixmap(self.pixmap)
-
-    #self.mouse_track_label = QLabel()
     self.setMouseTracking(True)
 
+  #
+  # I M A G E
+  #
+  def smilToNumpyImage(self, z=0):
+    parent = self.parent
+    self.imArray = np.zeros((parent.h, parent.w, parent.d),
+                            dtype=sp2npTypes[parent.imType])
+    uLim = parent.image.getDataTypeMax()
+    lLim = parent.image.getDataTypeMin()
+    Max = sp.maxVal(parent.image)
+    Min = sp.minVal(parent.image)
+    if Max == Min:
+      Max = uLim
+      Min = lLim
+
+    if parent.autorange:
+      coeff = 255. / (Max - Min)
+    else:
+      coeff = 255. / (uLim - lLim)
+
+    for i in range(0, parent.w):
+      for j in range(0, parent.h):
+        self.imArray[j, i] = int(coeff * parent.image.getPixel(i, j, z))
+
+    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
+    print(fmt.format(parent.imType, parent.w, parent.h, parent.d))
+
+  #
+  def imageUpdate(self):
+    parent = self.parent
+    self.smilToNumpyImage()
+
+    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
+    print(fmt.format(parent.imType, parent.w, parent.h, parent.d))
+
+    image = QImage(self.imArray, parent.w, parent.h, QImage.Format_Indexed8)
+    self.setPixmap(QPixmap.fromImage(image))
+    self.resize(parent.w + 20, parent.h + 80)
+    self.setMinimumSize(parent.w, parent.h)
+    #self.parent.resize()
+
+  #
+  #   E V E N T S
+  #
   def mouseMoveEvent(self, event):
     mousePos = event.pos()
-    posText = "Canvas - Mouse Coordinates: ({}, {})".format(mousePos.x(), mousePos.y())
-    print(posText)
+    if False and (mousePos.x() < 0 or mousePos.x() >= self.parent.w):
+      self.parent.lbl1.setText("")
+      return
+    if False and (mousePos.y() < 0 or mousePos.y() >= self.parent.h):
+      self.parent.lbl1.setText("")
+      return
+
+    fmt = "Mouse Coordinates: ({}, {})"
+    posText = fmt.format(mousePos.x(), mousePos.y())
+    self.parent.lbl1.setText(posText)
+    #print(posText)
 
 
 # =============================================================================
@@ -180,6 +228,7 @@ class smilImageView(QMainWindow):
     self.initializeUI()
 
     self.setupImage(img)
+    self.resize(self.w + 20, self.h + 80)
 
   #
   #
@@ -221,20 +270,13 @@ class smilImageView(QMainWindow):
     self.lbl1 = QLabel()
     self.lbl1.setText("Label 1")
 
-    self.lbl2 = QLabel()
-    self.lbl2.setText("Label 2")
-    #image = QImage(self.imArray, self.w, self.h, QImage.Format_Indexed8)
-    #self.lbl2.setPixmap(QPixmap.fromImage(image))
-    self.lbl2.setMinimumSize(100,100)
-
     self.canvas = smilCanvas(self)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.lbl1)
     vbox.addStretch()
-    vbox.addWidget(self.lbl2)
-    vbox.addStretch()
     vbox.addWidget(self.canvas)
+    vbox.addStretch()
 
     tout = QWidget()
     tout.setLayout(vbox)
@@ -242,10 +284,7 @@ class smilImageView(QMainWindow):
 
     self.statusBar = QStatusBar()
     self.setStatusBar(self.statusBar)
-    self.statusBar.showMessage("StatusBar")
-    #self.statusBar.showMessage(self.imName)
-
-    #self.setMouseTracking(True)
+    self.statusBar.showMessage("")
 
   #
   # M E N U S
@@ -261,14 +300,18 @@ class smilImageView(QMainWindow):
     file_menu.addSeparator()
     file_menu.addAction(self.print_act)
     file_menu.addSeparator()
-    file_menu.addAction(self.quit_act)
+    file_menu.addAction(self.hide_act)
+    file_menu.addAction(self.close_act)
 
     # Create File menu and add actions
     tools_menu = self.menuBar().addMenu("Tools")
     tools_menu.addAction(self.zoomIn_act)
     tools_menu.addAction(self.zoomOut_act)
+    tools_menu.addAction(self.zoomReset_act)
     tools_menu.addSeparator()
     tools_menu.addAction(self.label_act)
+    tools_menu.addSeparator()
+    tools_menu.addAction(self.info_act)
 
   def createActions(self):
     """Create the application's menu actions."""
@@ -287,10 +330,15 @@ class smilImageView(QMainWindow):
     #self.print_act.triggered.connect(self.printImage)
     self.print_act.setEnabled(False)
 
-    self.quit_act = QAction(QIcon("images/exit.png"), "Close Window")
-    self.quit_act.setShortcut("Ctrl+Q")
-    self.quit_act.setStatusTip("Close Window")
-    #self.quit_act.triggered.connect(self.close)
+    self.hide_act = QAction(QIcon("images/exit.png"), "Hide Window")
+    self.hide_act.setShortcut("Ctrl+Q")
+    self.hide_act.setStatusTip("Hide Window")
+    #self.hide_act.triggered.connect(self.close)
+
+    self.close_act = QAction(QIcon("images/exit.png"), "Close Window")
+    self.close_act.setShortcut("Ctrl+Q")
+    self.close_act.setStatusTip("Close Window")
+    #self.close_act.triggered.connect(self.close)
 
     #
     # Tools menu
@@ -305,15 +353,20 @@ class smilImageView(QMainWindow):
     self.zoomOut_act.setStatusTip("Zoom Out image")
     #self.quit_act.triggered.connect(self.close)
 
-    self.zoomIn_act = QAction("Zoom Reset")
-    self.zoomIn_act.setShortcut("Ctrl+=")
-    self.zoomIn_act.setStatusTip("Reset Zoom to Original")
+    self.zoomReset_act = QAction("Zoom Reset")
+    self.zoomReset_act.setShortcut("Ctrl+=")
+    self.zoomReset_act.setStatusTip("Reset Zoom to Original")
     #self.quit_act.triggered.connect(self.close)
 
     self.label_act = QAction("Show labelled image")
     self.label_act.setShortcut("Ctrl+L")
     self.label_act.setStatusTip("Show labelled image")
     #self.quit_act.triggered.connect(self.close)
+
+    self.info_act = QAction("Image information")
+    self.info_act.setShortcut("Ctrl+I")
+    self.info_act.setStatusTip("Image information")
+    #self.info_act.triggered.connect(self.close)
 
   #
   # I M A G E
@@ -334,50 +387,20 @@ class smilImageView(QMainWindow):
     self.setWindowTitle(self.imName)
     self.imageUpdate()
 
-  def smilToNumpyImage(self, z=0):
-    self.imArray = np.zeros((self.h, self.w, self.d),
-                            dtype=sp2npTypes[self.imType])
-    uLim = self.image.getDataTypeMax()
-    lLim = self.image.getDataTypeMin()
-    Max = sp.maxVal(self.image)
-    Min = sp.minVal(self.image)
-    if Max == Min:
-      Max = uLim
-      Min = lLim
-
-    if self.autorange:
-      coeff = 255. / (Max - Min)
-    else:
-      coeff = 255. / (uLim - lLim)
-
-    for i in range(0, self.w):
-      for j in range(0, self.h):
-        self.imArray[j, i] = int(coeff * self.image.getPixel(i, j, z))
-
-    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
-    print(fmt.format(self.imType, self.w, self.h, self.d))
-
   #
   def imageUpdate(self):
-    self.smilToNumpyImage()
-
-    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
-    print(fmt.format(self.imType, self.w, self.h, self.d))
-
-    image = QImage(self.imArray, self.w, self.h, QImage.Format_Indexed8)
-    self.lbl2.setPixmap(QPixmap.fromImage(image))
-    self.resize(self.w + 20, self.h + 80)
-    self.lbl2.setMinimumSize(self.w, self.h)
+    self.canvas.imageUpdate()
+    return
 
   #
   # EVENT HANDLERS
   #
-  def mouseMoveEvent(self, event):
+  def XmouseMoveEvent(self, event):
     mousePos = event.pos()
     posText = "Mouse Coordinates: ({}, {})".format(mousePos.x(), mousePos.y())
     print(posText)
 
-  def mousePressEvent(self, event):
+  def XmousePressEvent(self, event):
       """Handle when mouse is pressed."""
       if event.button() == Qt.MouseButton.LeftButton:
         print('  Left button')
@@ -427,7 +450,7 @@ def main(cli, config, args=None):
     im.setName("im 512x256")
     images.append(im)
 
-  if False:
+  if True:
     im = sp.Image(256, 256, 1,'UINT16')
     mkImage(im)
     im.setName("im 256x256 UINT16")
@@ -445,7 +468,12 @@ def main(cli, config, args=None):
 
   windows = []
   for im in images:
-    windows.append(smilImageView(im))
+    w = smilImageView(im)
+    windows.append(w)
+    g.register(w.uuid, w)
+
+  print()
+  g.list()
 
   if True:
     r = input("Type any key to continue")
