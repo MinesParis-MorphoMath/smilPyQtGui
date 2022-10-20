@@ -65,13 +65,13 @@ import numpy as np
 
 import smilPython as sp
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
                              QStatusBar, QTextEdit, QWidget)
-from PyQt5.QtWidgets import QApplication, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
 import globals as g
 
@@ -163,8 +163,7 @@ class smilCanvas(QLabel):
   #
   def smilToNumpyImage(self, z=0):
     parent = self.parent
-    self.imArray = np.zeros((parent.h, parent.w, parent.d),
-                            dtype=sp2npTypes[parent.imType])
+
     uLim = parent.image.getDataTypeMax()
     lLim = parent.image.getDataTypeMin()
     Max = sp.maxVal(parent.image)
@@ -178,43 +177,37 @@ class smilCanvas(QLabel):
     else:
       coeff = 255. / (uLim - lLim)
 
-    for i in range(0, parent.w):
-      for j in range(0, parent.h):
-        self.imArray[j, i] = int(coeff * parent.image.getPixel(i, j, z))
-
-    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
-    print(fmt.format(parent.imType, parent.w, parent.h, parent.d))
+    imt = sp.Image(parent.image)
+    sp.scale(parent.image, parent.scale, imt, "closest")
+    #sp.write(imt, "imt-{:05.2f}.png".format(parent.scale))
+    w = imt.getWidth()
+    h = imt.getHeight()
+    d = imt.getDepth()
+    w -= w % 4
+    h -= h % 4
+    print('  imt : {:4d} {:4d} {:4d}'.format(w, h, d))
+    self.imArray = np.zeros((h, w, d), dtype=sp2npTypes[parent.imType])
+    for i in range(0, w):
+      for j in range(0, h):
+        self.imArray[j, i] = int(coeff * imt.getPixel(i, j))
 
   #
-  def imageUpdate(self):
+  def update(self):
     parent = self.parent
     self.smilToNumpyImage()
 
-    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
-    print(fmt.format(parent.imType, parent.w, parent.h, parent.d))
+    image = QImage(self.imArray, self.imArray.shape[1], self.imArray.shape[0], QImage.Format_Indexed8)
 
-    image = QImage(self.imArray, parent.w, parent.h, QImage.Format_Indexed8)
     self.setPixmap(QPixmap.fromImage(image))
-    self.resize(parent.w + 20, parent.h + 80)
-    self.setMinimumSize(parent.w, parent.h)
-    #self.parent.resize()
+
 
   #
   #   E V E N T S
   #
   def mouseMoveEvent(self, event):
-    mousePos = event.pos()
-    if False and (mousePos.x() < 0 or mousePos.x() >= self.parent.w):
-      self.parent.lbl1.setText("")
-      return
-    if False and (mousePos.y() < 0 or mousePos.y() >= self.parent.h):
-      self.parent.lbl1.setText("")
-      return
-
-    fmt = "Mouse Coordinates: ({}, {})"
-    posText = fmt.format(mousePos.x(), mousePos.y())
-    self.parent.lbl1.setText(posText)
-    #print(posText)
+    parent = self.parent
+    parent.mousePosition = event.pos()
+    parent.updateViewState()
 
 
 # =============================================================================
@@ -229,6 +222,7 @@ class smilImageView(QMainWindow):
 
     self.setupImage(img)
     self.resize(self.w + 20, self.h + 80)
+    self.show()
 
   #
   #
@@ -237,6 +231,7 @@ class smilImageView(QMainWindow):
     self.uuid = uuid.uuid4()
     self.imName = ''
     self.scale = 1.
+    self.scaleMax = 12.
     self.showLabel = False
     self.autorange = False
 
@@ -246,6 +241,9 @@ class smilImageView(QMainWindow):
     self.h = 0
     self.d = 0
     self.imName = ''
+
+    self.mousePosition = QPoint(0,0)
+    self.lastPosition = QPoint(0,0)
 
   #
   #
@@ -260,7 +258,7 @@ class smilImageView(QMainWindow):
     self.createActions()
     self.createMenu()
 
-    self.show()
+    #self.show()
 
   #
   #
@@ -271,6 +269,15 @@ class smilImageView(QMainWindow):
     self.lbl1.setText("Label 1")
 
     self.canvas = smilCanvas(self)
+    if False:
+      self.canvas.setBackgroundRole(QPalette.Base);
+      self.canvas.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored);
+      self.canvas.setScaledContents(True);
+
+      self.scrollArea = QScrollArea()
+      self.scrollArea.setBackgroundRole(QPalette.Dark)
+      self.scrollArea.setWidget(self.canvas)
+      self.scrollArea.setVisible(True)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.lbl1)
@@ -346,17 +353,17 @@ class smilImageView(QMainWindow):
     self.zoomIn_act = QAction("Zoom In")
     self.zoomIn_act.setShortcut("Ctrl++")
     self.zoomIn_act.setStatusTip("Zoom In image")
-    #self.quit_act.triggered.connect(self.close)
+    self.zoomIn_act.triggered.connect(self.fn_zoomIn)
 
     self.zoomOut_act = QAction("Zoom Out")
     self.zoomOut_act.setShortcut("Ctrl+-")
     self.zoomOut_act.setStatusTip("Zoom Out image")
-    #self.quit_act.triggered.connect(self.close)
+    self.zoomOut_act.triggered.connect(self.fn_zoomOut)
 
-    self.zoomReset_act = QAction("Zoom Reset")
+    self.zoomReset_act = QAction("Normal size")
     self.zoomReset_act.setShortcut("Ctrl+=")
     self.zoomReset_act.setStatusTip("Reset Zoom to Original")
-    #self.quit_act.triggered.connect(self.close)
+    self.zoomReset_act.triggered.connect(self.fn_zoomReset)
 
     self.label_act = QAction("Show labelled image")
     self.label_act.setShortcut("Ctrl+L")
@@ -366,7 +373,7 @@ class smilImageView(QMainWindow):
     self.info_act = QAction("Image information")
     self.info_act.setShortcut("Ctrl+I")
     self.info_act.setStatusTip("Image information")
-    #self.info_act.triggered.connect(self.close)
+    self.info_act.triggered.connect(self.fn_info)
 
   #
   # I M A G E
@@ -385,15 +392,82 @@ class smilImageView(QMainWindow):
       self.imName = "No name"
 
     self.setWindowTitle(self.imName)
-    self.imageUpdate()
+    self.update()
+
+    fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
+    print(fmt.format(self.imType, self.w, self.h, self.d))
 
   #
-  def imageUpdate(self):
-    self.canvas.imageUpdate()
+  def update(self):
+    self.canvas.update()
+    #self.resize(self.w * self.scale + 20, self.h * self.scale + 80)
+
+    self.updateViewState()
     return
 
   #
   # EVENT HANDLERS
+  #
+  def updateViewState(self):
+
+    def isInImage(x, y):
+      if x < 0 or x >= self.w:
+        return False
+      if y < 0 or y >= self.h:
+        return False
+      return True
+
+    x = int(self.mousePosition.x() // self.scale)
+    y = int(self.mousePosition.y() // self.scale)
+
+    s = []
+    s.append("Scale : {:.3f}".format(self.scale))
+
+    if isInImage(x, y):
+      v = self.image.getPixel(x,y)
+      s.append("Mouse : ({:4d}, {:4d})".format(x, y))
+      s.append("Pixel value : {}".format(v))
+
+    sOut = " - ".join(s)
+    self.lbl1.setText(sOut)
+
+  def fn_zoomIn(self):
+    s = self.scale * 1.25
+    if s < self.scaleMax:
+      self.scale = s
+      self.update()
+
+  def fn_zoomOut(self):
+    s = self.scale * 0.8
+    if s * self.scaleMax > 1.:
+      self.scale = s
+      self.update()
+
+  def fn_zoomReset(self):
+    if self.scale != 1.:
+      self.scale = 1.
+      self.update()
+
+  def fn_info(self):
+    s = []
+
+    s.append('Name       : {:}'.format(self.image.getName()))
+    s.append('Data type  : {:}'.format(self.image.getTypeAsString()))
+    s.append('Dimensions : {:}'.format(self.image.getDimension()))
+    s.append('Size       : {:}'.format(self.image.getSize()))
+    s.append('Allocated  : {:} bytes'.format(self.image.getAllocatedSize()))
+
+    #print('\n' + '\n'.join(s))
+
+    s.insert(0, '<pre>')
+    s.append('<pre>')
+    sOut = '\n'.join(s)
+
+    msgbox = QMessageBox();
+    msgbox.setText('<center><h2>Image information</h2></center>')
+    msgbox.setInformativeText(sOut)
+    msgbox.exec()
+
   #
   def XmouseMoveEvent(self, event):
     mousePos = event.pos()
@@ -444,7 +518,7 @@ def main(cli, config, args=None):
   im.setName("im 256x256")
   images.append(im)
 
-  if False:
+  if True:
     im = sp.Image(512,256)
     mkImage(im)
     im.setName("im 512x256")
@@ -454,6 +528,17 @@ def main(cli, config, args=None):
     im = sp.Image(256, 256, 1,'UINT16')
     mkImage(im)
     im.setName("im 256x256 UINT16")
+    images.append(im)
+
+  if True:
+    im = sp.Image()
+    w = im.getWidth()
+    h = im.getHeight()
+    hc = h // 2
+    for i in range(0, w):
+      for j in range(hc - 8, hc + 8):
+        im.setPixel(i, j, 255)
+    im.setName("im 256x256 HBAR")
     images.append(im)
 
   files = ["images/astronaut-bw.png", "images/astronaut-small.png"]
