@@ -70,7 +70,8 @@ from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
-                             QStatusBar, QTextEdit, QWidget)
+                             QStatusBar, QTextEdit, QWidget,
+                             QGraphicsView, QGraphicsScene,)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
 import globals as g
@@ -116,6 +117,9 @@ def appShowConfigFile(config=None):
 # -----------------------------------------------------------------------------
 #
 #
+debug = False
+verbose = False
+
 def getCliArgs():
   parser = ap.ArgumentParser()
 
@@ -129,6 +133,10 @@ def getCliArgs():
   parser.add_argument('--str', default="String", help='A string', type=str)
 
   cli = parser.parse_args()
+
+  debug = cli.debug
+  verbose = cli.verbose
+
   return cli
 
 
@@ -145,7 +153,51 @@ sp2npTypes = {
 # =============================================================================
 #
 #
-class smilCanvas(QLabel):
+def smilImageInfo(win = None):
+
+    title = '<center><h2>Image information</h2></center>'
+
+    sl = [
+      '<center>',
+      '<pre>',
+      'Name       : {:}'.format(win.image.getName()),
+      'Data type  : {:}'.format(win.image.getTypeAsString()),
+      'Dimensions : {:}'.format(win.image.getDimension()),
+      'Size       : {:}'.format(win.image.getSize()),
+      'Allocated  : {:} bytes'.format(win.image.getAllocatedSize()),
+      '',
+      'UUID       : {:}'.format(win.uuid),
+      '</pre>',
+      '</center>'
+    ]
+
+    if debug:
+      print('\n' + '\n'.join(sl))
+
+    mLen = 0
+    for s in sl:
+      mLen = max(mLen, len(s))
+    for i in range(len(sl)):
+      sl[i] = sl[i].ljust(mLen + 4)
+
+    sOut = '\n'.join(sl)
+
+    msgbox = QMessageBox();
+    msgbox.setText(title)
+    msgbox.setInformativeText(sOut)
+    msgbox.exec()
+
+
+# =============================================================================
+#
+#  #         ##    #####   ######  #
+#  #        #  #   #    #  #       #
+#  #       #    #  #####   #####   #
+#  #       ######  #    #  #       #
+#  #       #    #  #    #  #       #
+#  ######  #    #  #####   ######  ######
+#
+class smilCanvasView(QLabel):
   def __init__(self, parent):
     super().__init__()
     self.parent = parent
@@ -155,6 +207,7 @@ class smilCanvas(QLabel):
     self.pixmap = QPixmap(width, height)
     self.pixmap.fill(Qt.GlobalColor.white)
     self.setPixmap(self.pixmap)
+    self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
     self.setMouseTracking(True)
 
@@ -178,14 +231,14 @@ class smilCanvas(QLabel):
       coeff = 255. / (uLim - lLim)
 
     imt = sp.Image(parent.image)
-    sp.scale(parent.image, parent.scale, imt, "closest")
-    #sp.write(imt, "imt-{:05.2f}.png".format(parent.scale))
+    sp.scale(parent.image, parent.scaleFactor, imt, "closest")
+    #sp.write(imt, "imt-{:05.2f}.png".format(parent.scaleFactor))
     w = imt.getWidth()
     h = imt.getHeight()
     d = imt.getDepth()
     w -= w % 4
     h -= h % 4
-    print('  imt : {:4d} {:4d} {:4d}'.format(w, h, d))
+    # print('  imt : {:4d} {:4d} {:4d}'.format(w, h, d))
     self.imArray = np.zeros((h, w, d), dtype=sp2npTypes[parent.imType])
     for i in range(0, w):
       for j in range(0, h):
@@ -207,13 +260,117 @@ class smilCanvas(QLabel):
   def mouseMoveEvent(self, event):
     parent = self.parent
     parent.mousePosition = event.pos()
-    parent.updateViewState()
+    parent.updateViewHint()
 
 
 # =============================================================================
 #
+#   ####    ####   ######  #    #  ######
+#  #       #    #  #       ##   #  #
+#   ####   #       #####   # #  #  #####
+#       #  #       #       #  # #  #
+#  #    #  #    #  #       #   ##  #
+#   ####    ####   ######  #    #  ######
 #
-class smilImageView(QMainWindow):
+class smilGraphicsView(QGraphicsView):
+  def __init__(self, parent):
+    super().__init__()
+    self.parent = parent
+    width, height = parent.width(), parent.height()
+    #width, height = 128, 128
+
+    self.qScene = QGraphicsScene()
+    self.qScene.addText("Hello, world!");
+
+    self.setScene(self.qScene)
+
+
+    #self.pixmap = QPixmap(width, height)
+    #self.pixmap.fill(Qt.GlobalColor.black)
+    #self.setPixmap(self.pixmap)
+    self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+    self.setMouseTracking(True)
+
+    self.show()
+
+  #
+  # I M A G E
+  #
+  def smilToNumpyImage(self, z=0):
+    parent = self.parent
+    image = parent.image
+
+    uLim = image.getDataTypeMax()
+    lLim = image.getDataTypeMin()
+    Max = sp.maxVal(image)
+    Min = sp.minVal(image)
+    if Max == Min:
+      Max = uLim
+      Min = lLim
+
+    if parent.autorange:
+      coeff = 255. / (Max - Min)
+    else:
+      coeff = 255. / (uLim - lLim)
+
+    #sp.write(imt, "imt-{:05.2f}.png".format(parent.scaleFactor))
+    w = image.getWidth()
+    h = image.getHeight()
+    d = image.getDepth()
+    #w -= w % 4
+    #h -= h % 4
+    # print('  imt : {:4d} {:4d} {:4d}'.format(w, h, d))
+    imArray = np.zeros((h, w, d), dtype=sp2npTypes[parent.imType])
+    for i in range(0, w):
+      for j in range(0, h):
+        imArray[j, i] = int(coeff * image.getPixel(i, j))
+    return imArray
+
+
+  def setImage(self):
+    parent = self.parent
+    self.imArray = self.smilToNumpyImage()
+    self.qImage = QImage(self.imArray, self.imArray.shape[1],
+                         self.imArray.shape[0], QImage.Format_Indexed8)
+
+    self.qPixmap = QPixmap.fromImage(self.qImage)
+    self.qScene.addPixmap(self.qPixmap)
+
+  def update(self, factor = 1.):
+    parent = self.parent
+    #self.smilToNumpyImage()
+    #self.qScene.addPixmap(QPixmap.fromImage(self.qImage))
+    if factor != 1:
+      items = self.qScene.items()
+      print("items len {:}".format(len(items)))
+      #for item in self.qScene.items():
+      #  self.qScene.removeItem(item)
+
+      print("scaleFactor : {:.3f}".format(parent.scaleFactor))
+      print("sceneRect   : {:}".format(self.sceneRect()))
+      self.scale(factor, factor)
+    #self.qScene.update(self.qRect)
+
+
+  #
+  #   E V E N T S
+  #
+  def mouseMoveEvent(self, event):
+    parent = self.parent
+    parent.mousePosition = event.pos()
+    parent.updateViewHint()
+
+# =============================================================================
+#
+#  #    #    ##       #    #    #
+#  ##  ##   #  #      #    ##   #
+#  # ## #  #    #     #    # #  #
+#  #    #  ######     #    #  # #
+#  #    #  #    #     #    #   ##
+#  #    #  #    #     #    #    #
+#
+class smilQtGui(QMainWindow):
   def __init__(self, img=None):
     super().__init__()
 
@@ -221,7 +378,9 @@ class smilImageView(QMainWindow):
     self.initializeUI()
 
     self.setupImage(img)
-    self.resize(self.w + 20, self.h + 80)
+    self.resize(self.w + 20, 2 * self.h + 80)
+
+    self.setMouseTracking(True)
     self.show()
 
   #
@@ -230,7 +389,7 @@ class smilImageView(QMainWindow):
   def initializeMembers(self):
     self.uuid = uuid.uuid4()
     self.imName = ''
-    self.scale = 1.
+    self.scaleFactor = 1.
     self.scaleMax = 12.
     self.showLabel = False
     self.autorange = False
@@ -241,6 +400,8 @@ class smilImageView(QMainWindow):
     self.h = 0
     self.d = 0
     self.imName = ''
+
+    self.linkedWindows = []
 
     self.mousePosition = QPoint(0,0)
     self.lastPosition = QPoint(0,0)
@@ -268,22 +429,16 @@ class smilImageView(QMainWindow):
     self.lbl1 = QLabel()
     self.lbl1.setText("Label 1")
 
-    self.canvas = smilCanvas(self)
-    if False:
-      self.canvas.setBackgroundRole(QPalette.Base);
-      self.canvas.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored);
-      self.canvas.setScaledContents(True);
+    self.canvas = smilCanvasView(self)
 
-      self.scrollArea = QScrollArea()
-      self.scrollArea.setBackgroundRole(QPalette.Dark)
-      self.scrollArea.setWidget(self.canvas)
-      self.scrollArea.setVisible(True)
+    self.smScene = smilGraphicsView(self)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.lbl1)
-    vbox.addStretch()
-    vbox.addWidget(self.canvas)
-    vbox.addStretch()
+    #vbox.addStretch()
+    vbox.addWidget(self.smScene)
+    #vbox.addWidget(self.canvas)
+    #vbox.addStretch()
 
     tout = QWidget()
     tout.setLayout(vbox)
@@ -319,6 +474,9 @@ class smilImageView(QMainWindow):
     tools_menu.addAction(self.label_act)
     tools_menu.addSeparator()
     tools_menu.addAction(self.info_act)
+    tools_menu.addSeparator()
+    tools_menu.addAction(self.link_act)
+    tools_menu.addAction(self.unlink_act)
 
   def createActions(self):
     """Create the application's menu actions."""
@@ -375,6 +533,16 @@ class smilImageView(QMainWindow):
     self.info_act.setStatusTip("Image information")
     self.info_act.triggered.connect(self.fn_info)
 
+    self.link_act = QAction("Link ...")
+    self.link_act.setShortcut("Ctrl+L")
+    self.link_act.setStatusTip("Link images")
+    #self.link_act.triggered.connect(self.fn_info)
+
+    self.unlink_act = QAction("Unlink ...")
+    self.unlink_act.setShortcut("Ctrl+U")
+    self.unlink_act.setStatusTip("Unlink linked images")
+    #self.unlink_act.triggered.connect(self.fn_info)
+
   #
   # I M A G E
   #
@@ -390,25 +558,27 @@ class smilImageView(QMainWindow):
     self.imName = self.image.getName()
     if self.imName is None or self.imName == '':
       self.imName = "No name"
-
     self.setWindowTitle(self.imName)
+
+    self.smScene.setImage()
     self.update()
 
     fmt = "Image : {:6s} : w({:d}) h({:d}) d({:d})"
     print(fmt.format(self.imType, self.w, self.h, self.d))
 
   #
-  def update(self):
-    self.canvas.update()
+  def update(self, factor=1.):
+    #self.canvas.update()
+    self.smScene.update(factor)
     #self.resize(self.w * self.scale + 20, self.h * self.scale + 80)
 
-    self.updateViewState()
+    self.updateViewHint()
     return
 
   #
   # EVENT HANDLERS
   #
-  def updateViewState(self):
+  def updateViewHint(self):
 
     def isInImage(x, y):
       if x < 0 or x >= self.w:
@@ -417,11 +587,11 @@ class smilImageView(QMainWindow):
         return False
       return True
 
-    x = int(self.mousePosition.x() // self.scale)
-    y = int(self.mousePosition.y() // self.scale)
+    x = int(self.mousePosition.x() // self.scaleFactor)
+    y = int(self.mousePosition.y() // self.scaleFactor)
 
     s = []
-    s.append("Scale : {:.3f}".format(self.scale))
+    s.append("Scale : {:5.1f} %".format(100 * self.scaleFactor))
 
     if isInImage(x, y):
       v = self.image.getPixel(x,y)
@@ -432,41 +602,26 @@ class smilImageView(QMainWindow):
     self.lbl1.setText(sOut)
 
   def fn_zoomIn(self):
-    s = self.scale * 1.25
+    s = self.scaleFactor * 1.25
     if s < self.scaleMax:
-      self.scale = s
-      self.update()
+      self.scaleFactor = s
+      self.update(factor=1.25)
 
   def fn_zoomOut(self):
-    s = self.scale * 0.8
+    s = self.scaleFactor * 0.8
     if s * self.scaleMax > 1.:
-      self.scale = s
-      self.update()
+      self.scaleFactor = s
+      self.update(factor=0.8)
 
   def fn_zoomReset(self):
-    if self.scale != 1.:
-      self.scale = 1.
+    if True or self.scaleFactor != 1.:
+      self.scaleFactor = 1.
       self.update()
 
   def fn_info(self):
-    s = []
+    smilImageInfo(self)
+    return
 
-    s.append('Name       : {:}'.format(self.image.getName()))
-    s.append('Data type  : {:}'.format(self.image.getTypeAsString()))
-    s.append('Dimensions : {:}'.format(self.image.getDimension()))
-    s.append('Size       : {:}'.format(self.image.getSize()))
-    s.append('Allocated  : {:} bytes'.format(self.image.getAllocatedSize()))
-
-    #print('\n' + '\n'.join(s))
-
-    s.insert(0, '<pre>')
-    s.append('<pre>')
-    sOut = '\n'.join(s)
-
-    msgbox = QMessageBox();
-    msgbox.setText('<center><h2>Image information</h2></center>')
-    msgbox.setInformativeText(sOut)
-    msgbox.exec()
 
   #
   def XmouseMoveEvent(self, event):
@@ -553,7 +708,7 @@ def main(cli, config, args=None):
 
   windows = []
   for im in images:
-    w = smilImageView(im)
+    w = smilQtGui(im)
     windows.append(w)
     g.register(w.uuid, w)
 
