@@ -66,12 +66,12 @@ import numpy as np
 
 import smilPython as sp
 
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
-                             QStatusBar, QTextEdit, QWidget,
+                             QStatusBar, QTextEdit, QWidget, QDialog,
                              QGraphicsView, QGraphicsScene, QSlider)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
@@ -480,7 +480,7 @@ class smilQtGui(QMainWindow):
     self.print_act.setShortcut("Ctrl+P")
     self.print_act.setStatusTip("Print image")
     self.print_act.triggered.connect(self.fn_print)
-    self.print_act.setEnabled(False)
+    #self.print_act.setEnabled(False)
 
     self.hide_act = QAction(QIcon("images/exit.png"), "Hide Window")
     self.hide_act.setShortcut("Ctrl+Q")
@@ -641,6 +641,7 @@ class smilQtGui(QMainWindow):
 
   def fn_print(self):
     print(inspect.stack()[0][3])
+    self.printImage()
     pass
 
   def fn_hide(self):
@@ -738,6 +739,34 @@ class smilQtGui(QMainWindow):
         print('  Left button')
       else:
         print('  Right button')
+
+
+
+  def printImage(self):
+    """Print image and use QPrinter to select the
+    native system format for the printer dialog."""
+    printer = QPrinter()
+    # Configure the printer
+    print_dialog = QPrintDialog(printer)
+    if print_dialog.exec() == QDialog.DialogCode.Accepted:
+      # Use QPainter to output a PDF file
+      painter = QPainter()
+      painter.begin(printer)
+      # Create QRect object to hold the painter's current
+      # viewport, which is the image_label
+      rect = QRect(painter.viewport())
+      # Get the size of image_label and use it to set the size
+      # of the viewport
+      pixmap = self.smScene.qPixmap
+      size = QSize(pixmap.size())
+      size.scale(rect.size(), Qt.AspectRatioMode.KeepAspectRatio)
+      painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
+      painter.setWindow(pixmap.rect())
+      # Scale the image_label to fit the rect source (0, 0)
+      painter.drawPixmap(0, 0, pixmap)
+      painter.end()
+
+
 
 # =============================================================================
 #

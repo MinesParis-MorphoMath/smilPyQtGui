@@ -27,6 +27,7 @@ TO DO
 * Save - from menu
 
 * Print - from menu
+  - OK
 
 * Set window title - use UUID ?
 
