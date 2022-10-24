@@ -42,6 +42,7 @@
 
 import os
 import sys
+import inspect
 
 import uuid
 
@@ -71,7 +72,7 @@ from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
                              QStatusBar, QTextEdit, QWidget,
-                             QGraphicsView, QGraphicsScene,)
+                             QGraphicsView, QGraphicsScene, QSlider)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
 import globals as g
@@ -134,7 +135,9 @@ def getCliArgs():
 
   cli = parser.parse_args()
 
-  debug = cli.debug
+  global debug, verbose
+
+  debug  = cli.debug
   verbose = cli.verbose
 
   return cli
@@ -152,18 +155,26 @@ sp2npTypes = {
 
 # =============================================================================
 #
+#  #    #    #  ######   ####
+#  #    ##   #  #       #    #
+#  #    # #  #  #####   #    #
+#  #    #  # #  #       #    #
+#  #    #   ##  #       #    #
+#  #    #    #  #        ####
 #
 def smilImageInfo(win = None):
 
     title = '<center><h2>Image information</h2></center>'
 
+    size = win.image.getSize()[0:win.image.getDimension()]
     sl = [
       '<center>',
       '<pre>',
       'Name       : {:}'.format(win.image.getName()),
       'Data type  : {:}'.format(win.image.getTypeAsString()),
       'Dimensions : {:}'.format(win.image.getDimension()),
-      'Size       : {:}'.format(win.image.getSize()),
+      #'Size       : {:}'.format(win.image.getSize()),
+      'Size       : {:}'.format(size),
       'Allocated  : {:} bytes'.format(win.image.getAllocatedSize()),
       '',
       'UUID       : {:}'.format(win.uuid),
@@ -201,19 +212,10 @@ class smilGraphicsView(QGraphicsView):
     super().__init__()
     self.parent = parent
     width, height = parent.width(), parent.height()
-    #width, height = 128, 128
 
     self.qScene = QGraphicsScene()
-    self.qScene.addText("Hello, world!");
-
     self.setScene(self.qScene)
-
-
-    #self.pixmap = QPixmap(width, height)
-    #self.pixmap.fill(Qt.GlobalColor.black)
-    #self.setPixmap(self.pixmap)
     self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-
     self.setMouseTracking(True)
 
     self.show()
@@ -221,7 +223,7 @@ class smilGraphicsView(QGraphicsView):
   #
   # I M A G E
   #
-  def smilToNumpyImage(self, z=0):
+  def smilToNumpyImage(self, image=None, z=0):
     parent = self.parent
     image = parent.image
 
@@ -245,31 +247,32 @@ class smilGraphicsView(QGraphicsView):
     #w -= w % 4
     #h -= h % 4
     # print('  imt : {:4d} {:4d} {:4d}'.format(w, h, d))
-    imArray = np.zeros((h, w, d), dtype=sp2npTypes[parent.imType])
+    imArray = np.zeros((h, w), dtype=sp2npTypes[parent.imType])
     for i in range(0, w):
       for j in range(0, h):
-        imArray[j, i] = int(coeff * image.getPixel(i, j))
+        imArray[j, i] = int(coeff * image.getPixel(i, j, z))
     return imArray
 
-
+  #
+  #
+  #
   def setImage(self):
     parent = self.parent
-    self.imArray = self.smilToNumpyImage()
+
+    self.imArray = self.smilToNumpyImage(z = parent.curSlice)
     self.qImage = QImage(self.imArray, self.imArray.shape[1],
                          self.imArray.shape[0], QImage.Format_Indexed8)
 
     self.qPixmap = QPixmap.fromImage(self.qImage)
     self.qScene.addPixmap(self.qPixmap)
 
-  def update(self, factor = 1.):
+  def update(self, factor = 1., sliderChanged=False):
     parent = self.parent
-    #self.smilToNumpyImage()
-    #self.qScene.addPixmap(QPixmap.fromImage(self.qImage))
+
+    if sliderChanged:
+      self.setImage()
+
     if factor > 0 and factor != 1:
-      #items = self.qScene.items()
-      #print("items len {:}".format(len(items)))
-      #for item in self.qScene.items():
-      #  self.qScene.removeItem(item)
       self.scale(factor, factor)
       parent.scaleValue *= factor
 
@@ -290,8 +293,22 @@ class smilGraphicsView(QGraphicsView):
     if debug:
       print("viewRect    : {:} {:}".format(self.width(), self.height()))
 
+    hb = self.horizontalScrollBar().value()
+    vb = self.verticalScrollBar().value()
+    if debug:
+      print("Scroll bar : {:d} {:d}".format(hb, vb))
+
     #self.qScene.update(self.qRect)
 
+  #
+  # U I
+  #
+  def getScrollValues(self):
+    hb = self.horizontalScrollBar().value()
+    vb = self.verticalScrollBar().value()
+    if debug:
+      print("Scroll bar : {:d} {:d}".format(hb, vb))
+    return (hb, vb)
 
   #
   #   E V E N T S
@@ -311,14 +328,14 @@ class smilGraphicsView(QGraphicsView):
 #  #    #  #    #     #    #    #
 #
 class smilQtGui(QMainWindow):
-  def __init__(self, img=None):
+  def __init__(self, img=None, label=False, name=None):
     super().__init__()
 
     self.initializeMembers()
     self.initializeUI()
 
     self.setupImage(img)
-    self.resize(self.w + 20, self.h + 80)
+    self.resize(self.w + 20, self.h + 100)
 
     self.setMouseTracking(True)
     self.show()
@@ -339,6 +356,7 @@ class smilQtGui(QMainWindow):
     self.w = 0
     self.h = 0
     self.d = 0
+    self.curSlice = 0
     self.imName = ''
 
     self.linkedWindows = []
@@ -369,10 +387,18 @@ class smilQtGui(QMainWindow):
     self.lbl1 = QLabel()
     self.lbl1.setText("Label 1")
 
+    self.slider = QSlider()
+    self.slider.setOrientation(Qt.Horizontal)
+    self.slider.setMinimum(0)
+    self.slider.setMaximum(99)
+    self.slider.setTracking(True)
+    self.slider.valueChanged[int].connect(self.sliderValueChanged)
+
     self.smScene = smilGraphicsView(self)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.lbl1)
+    vbox.addWidget(self.slider)
     vbox.addWidget(self.smScene)
 
     tout = QWidget()
@@ -391,10 +417,11 @@ class smilQtGui(QMainWindow):
     self.menuBar().setNativeMenuBar(False)
 
     # Create File menu and add actions
-    file_menu = self.menuBar().addMenu("Images")
+    file_menu = self.menuBar().addMenu("Image")
     #file_menu.addAction(self.open_act)
     file_menu.addAction(self.list_act)
     file_menu.addSeparator()
+    file_menu.addAction(self.reload_act)
     file_menu.addAction(self.save_act)
     file_menu.addSeparator()
     file_menu.addAction(self.print_act)
@@ -402,18 +429,31 @@ class smilQtGui(QMainWindow):
     file_menu.addAction(self.hide_act)
     file_menu.addAction(self.close_act)
 
-    # Create File menu and add actions
+    # Create View menu and add actions
+    view_menu = self.menuBar().addMenu("View")
+    view_menu.addAction(self.zoomIn_act)
+    view_menu.addAction(self.zoomOut_act)
+    view_menu.addAction(self.zoomReset_act)
+    view_menu.addSeparator()
+    view_menu.addAction(self.magnify_act)
+    view_menu.addSeparator()
+    view_menu.addAction(self.label_act)
+    view_menu.addSeparator()
+    view_menu.addAction(self.histogram_act)
+    view_menu.addAction(self.info_act)
+
+
+    # Create Tools menu
     tools_menu = self.menuBar().addMenu("Tools")
-    tools_menu.addAction(self.zoomIn_act)
-    tools_menu.addAction(self.zoomOut_act)
-    tools_menu.addAction(self.zoomReset_act)
-    tools_menu.addSeparator()
-    tools_menu.addAction(self.label_act)
-    tools_menu.addSeparator()
-    tools_menu.addAction(self.info_act)
-    tools_menu.addSeparator()
     tools_menu.addAction(self.link_act)
     tools_menu.addAction(self.unlink_act)
+
+
+    # Create Help menu
+    help_menu = self.menuBar().addMenu("Help")
+    help_menu.addAction(self.help_act)
+    help_menu.addSeparator()
+    help_menu.addAction(self.about_act)
 
   def createActions(self):
     """Create the application's menu actions."""
@@ -422,33 +462,38 @@ class smilQtGui(QMainWindow):
     # File menu
     #
     self.list_act = QAction(QIcon("images/open_file.png"),"List Images")
-    self.list_act.setShortcut("Ctrl+S")
-    self.list_act.setStatusTip("Save Snapshot")
-    #self.list_act.triggered.connect(self.saveImage)
+    #self.list_act.setShortcut("Ctrl+S")
+    self.list_act.setStatusTip("List images")
+    self.list_act.triggered.connect(self.fn_list)
+
+    self.reload_act = QAction(QIcon("images/save_file.png"),"Reload image")
+    self.reload_act.setShortcut("Ctrl+R")
+    self.reload_act.setStatusTip("Reload Image")
+    self.reload_act.triggered.connect(self.fn_reload)
 
     self.save_act = QAction(QIcon("images/save_file.png"),"Save Snapshot")
     self.save_act.setShortcut("Ctrl+S")
     self.save_act.setStatusTip("Save Snapshot")
-    #self.save_act.triggered.connect(self.saveImage)
+    self.save_act.triggered.connect(self.fn_save)
 
     self.print_act = QAction(QIcon("images/print.png"), "Print")
     self.print_act.setShortcut("Ctrl+P")
     self.print_act.setStatusTip("Print image")
-    #self.print_act.triggered.connect(self.printImage)
+    self.print_act.triggered.connect(self.fn_print)
     self.print_act.setEnabled(False)
 
     self.hide_act = QAction(QIcon("images/exit.png"), "Hide Window")
     self.hide_act.setShortcut("Ctrl+Q")
     self.hide_act.setStatusTip("Hide Window")
-    #self.hide_act.triggered.connect(self.close)
+    self.hide_act.triggered.connect(self.fn_hide)
 
     self.close_act = QAction(QIcon("images/exit.png"), "Close Window")
     self.close_act.setShortcut("Ctrl+W")
     self.close_act.setStatusTip("Close Window")
-    #self.close_act.triggered.connect(self.close)
+    self.close_act.triggered.connect(self.fn_close)
 
     #
-    # Tools menu
+    # View menu
     #
     self.zoomIn_act = QAction("Zoom In")
     self.zoomIn_act.setShortcut("Ctrl++")
@@ -465,25 +510,52 @@ class smilQtGui(QMainWindow):
     self.zoomReset_act.setStatusTip("Reset Zoom to Original")
     self.zoomReset_act.triggered.connect(self.fn_zoomReset)
 
+    self.magnify_act = QAction("Magnify ...")
+    self.magnify_act.setShortcut("Ctrl+M")
+    self.magnify_act.setStatusTip("Close look around pointer")
+    self.magnify_act.triggered.connect(self.fn_magnify)
+
     self.label_act = QAction("Show labelled image")
     self.label_act.setShortcut("Ctrl+L")
     self.label_act.setStatusTip("Show labelled image")
-    #self.quit_act.triggered.connect(self.close)
+    self.label_act.triggered.connect(self.fn_label)
 
     self.info_act = QAction("Image information")
     self.info_act.setShortcut("Ctrl+I")
     self.info_act.setStatusTip("Image information")
     self.info_act.triggered.connect(self.fn_info)
 
+    self.histogram_act = QAction("Histogram")
+    #self.histogram_act.setShortcut("Ctrl+I")
+    self.histogram_act.setStatusTip("Show image histogram")
+    self.histogram_act.triggered.connect(self.fn_histogram)
+
+    #
+    # Tools menu
+    #
     self.link_act = QAction("Link ...")
     self.link_act.setShortcut("Ctrl+L")
     self.link_act.setStatusTip("Link images")
-    #self.link_act.triggered.connect(self.fn_info)
+    self.link_act.triggered.connect(self.fn_link)
 
     self.unlink_act = QAction("Unlink ...")
     self.unlink_act.setShortcut("Ctrl+U")
     self.unlink_act.setStatusTip("Unlink linked images")
-    #self.unlink_act.triggered.connect(self.fn_info)
+    self.unlink_act.triggered.connect(self.fn_unlink)
+
+
+
+    #
+    # Help menu
+    #
+    self.help_act = QAction("Help")
+    self.help_act.setStatusTip("Help")
+    self.help_act.triggered.connect(self.fn_help)
+
+    self.about_act = QAction("About")
+    self.about_act.setStatusTip("Help")
+    self.about_act.triggered.connect(self.fn_about)
+
 
   #
   # I M A G E
@@ -502,6 +574,9 @@ class smilQtGui(QMainWindow):
       self.imName = "No name"
     self.setWindowTitle(self.imName)
 
+    self.slider.setMinimum(0)
+    self.slider.setMaximum(self.d - 1)
+
     self.smScene.setImage()
     self.update()
 
@@ -509,8 +584,8 @@ class smilQtGui(QMainWindow):
     print(fmt.format(self.imType, self.w, self.h, self.d))
 
   #
-  def update(self, factor=1.):
-    self.smScene.update(factor)
+  def update(self, factor=1., sliderChanged=False):
+    self.smScene.update(factor, sliderChanged)
     #self.resize(self.w * self.scale + 20, self.h * self.scale + 80)
 
     self.updateViewHint()
@@ -528,45 +603,130 @@ class smilQtGui(QMainWindow):
         return False
       return True
 
-    x = int(self.mousePosition.x() // self.scaleValue)
-    y = int(self.mousePosition.y() // self.scaleValue)
+    dx, dy = self.smScene.getScrollValues()
+    x = int(self.mousePosition.x() + dx)
+    y = int(self.mousePosition.y() + dy)
+
+    x = int(x // self.scaleValue)
+    y = int(y // self.scaleValue)
 
     s = []
     s.append("Scale : {:5.1f} %".format(100 * self.scaleValue))
+    if self.d > 1:
+      s.append("Slice : {:d}".format(self.curSlice))
 
     if isInImage(x, y):
-      v = self.image.getPixel(x,y)
+      v = self.image.getPixel(x,y, self.curSlice)
       s.append("Mouse : ({:4d}, {:4d})".format(x, y))
       s.append("Pixel value : {}".format(v))
 
     sOut = " - ".join(s)
     self.lbl1.setText(sOut)
 
+  #
+  # I M A G E   M E N U
+  #
+  def fn_list(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_reload(self):
+    print(inspect.stack()[0][3])
+    self.setupImage(self.image)
+    pass
+
+  def fn_save(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_print(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_hide(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_close(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  #
+  #
+  # V I E W   M E N U
+  #
   def fn_zoomIn(self):
     fInc = 1.25
     s = self.scaleValue * fInc
     if s < self.scaleMax:
-      #self.scaleValue = s
       self.update(factor=1.25)
 
   def fn_zoomOut(self):
     fDec = 0.8
     s = self.scaleValue * fDec
     if s * self.scaleMax > 1.:
-      #self.scaleValue = s
       self.update(factor=0.8)
 
   def fn_zoomReset(self):
-    if True or self.scaleValue != 1.:
-      #self.scaleValue = 1.
-      self.update(factor = 0.)
+    self.update(factor = 0.)
 
   def fn_info(self):
     smilImageInfo(self)
     return
 
+  def fn_label(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_magnify(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_histogram(self):
+    print(inspect.stack()[0][3])
+    histoMap = sp.histogram(self.image)
+    if verbose:
+      for k in histoMap:
+        if histoMap[k] == 0:
+          continue
+        print('  {:3d} {:6d}'.format(k, histoMap[k]))
+    pass
 
   #
+  #  T O O L S   M E N U
+  #
+  def fn_link(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_unlink(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  #
+  #  H E L P   M E N U
+  #
+  def fn_help(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  def fn_about(self):
+    print(inspect.stack()[0][3])
+    pass
+
+  #
+  #
+  #
+
+  #
+  #
+  #
+  def sliderValueChanged(self, arg):
+    if debug:
+      print('Slider - new value : {:d}'.format(arg))
+    self.curSlice = arg
+    self.update(sliderChanged=True)
+
   def XmouseMoveEvent(self, event):
     mousePos = event.pos()
     posText = "Mouse Coordinates: ({}, {})".format(mousePos.x(), mousePos.y())
@@ -607,6 +767,18 @@ def main(cli, config, args=None):
       im.setPixel(m // 2, i, v)
       im.setPixel(m // 2 + 1, i, v)
 
+  def mk3DImage(im):
+    xmax = im.getWidth() // 2
+    depth = im.getDepth()
+    for z in range(0, depth):
+      for i in range(z,xmax-z):
+        im.setPixel(i + z,        z + xmax - 1 - i, z, 255)
+        im.setPixel(xmax + i - z, i + z,            z, 255)
+        im.setPixel(i + z,        xmax + i - z,     z, 255)
+        im.setPixel(xmax + i - z, 255 - i - z,      z, 255)
+    #sp.dilate(im, im)
+
+
   app = QApplication(sys.argv)
 
   images = []
@@ -637,6 +809,13 @@ def main(cli, config, args=None):
       for j in range(hc - 8, hc + 8):
         im.setPixel(i, j, 255)
     im.setName("im 256x256 HBAR")
+    images.append(im)
+
+  if True:
+    im = sp.Image(256, 256, 64)
+    mk3DImage(im)
+    sp.dilate(im, im)
+    im.setName("im 3D 256x256x64")
     images.append(im)
 
   files = ["images/astronaut-bw.png", "images/astronaut-small.png"]

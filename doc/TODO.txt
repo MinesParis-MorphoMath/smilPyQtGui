@@ -1,0 +1,43 @@
+
+TO DO
+
+* Images 3D
+  - OK
+
+* Images RGB
+
+* Image update - sp.modified()
+  - Reload OK
+  - How to handle "modified" signals ?
+
+* Magnifier
+
+* Link manager from images
+
+* Close - destroy GUI - from menu
+
+* Destroy GUI - from library
+
+* Overlays ???
+
+* Help modal dialog
+
+* About modal dialog
+
+* Save - from menu
+
+* Print - from menu
+
+* Set window title - use UUID ?
+
+* Histogramme
+
+* Labeled images
+
+
+
+
+
+
+
+* Finally... clean-up code
