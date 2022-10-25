@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  smilMainWindow.py
+#  smilPyQtGui.py
 #
 #  Copyright 2022 José Marcio Martins da Cruz <martins@jose-marcio.org>
 #
@@ -53,16 +53,8 @@ import uuid
 import re
 import datetime
 
-import argparse as ap
-import configparser as cp
-
 import math as m
 import numpy as np
-
-#import pandas      as pd
-#import statistics  as st
-#import scipy.stats as sst
-#import seaborn     as sb
 
 import smilPython as sp
 
@@ -72,54 +64,18 @@ from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
                              QStatusBar, QTextEdit, QWidget, QDialog,
-                             QGraphicsView, QGraphicsScene, QSlider)
+                             QGraphicsView, QGraphicsScene, QSlider, QLineEdit)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
-import globals as g
-
-# -----------------------------------------------------------------------------
-#
-#
-def appLoadConfigFile(fconfig=None):
-  if fconfig is None:
-    return None
-
-  if not os.path.isfile(fconfig):
-    return None
-
-  config = cp.ConfigParser(interpolation=cp.ExtendedInterpolation(),
-                           default_section="default")
-
-  config.BOOLEAN_STATES['Vrai'] = True
-  config.BOOLEAN_STATES['Faux'] = False
-
-  config.read(fconfig)
-
-  return config
-
-
-# -----------------------------------------------------------------------------
-#
-#
-def appShowConfigFile(config=None):
-  if config is None:
-    return
-  sections = config.sections()
-  for ks in sections:
-    print("[{:s}]".format(ks))
-    s = config[ks]
-    for k in s.keys():
-      print("  {:20s} : {:s}".format(k, s[k]))
-      #print("  {:20s} : {:32s} # {:s}".format(k, s[k], s.get(k)))
-
-    print()
-
+import smilPyQtDlog as spqd
+import smilPyQtTools as spqt
 
 # -----------------------------------------------------------------------------
 #
 #
 debug = False
 verbose = False
+
 
 def getCliArgs():
   parser = ap.ArgumentParser()
@@ -137,7 +93,7 @@ def getCliArgs():
 
   global debug, verbose
 
-  debug  = cli.debug
+  debug = cli.debug
   verbose = cli.verbose
 
   return cli
@@ -153,50 +109,6 @@ sp2npTypes = {
   'UINT32': np.uint32,
 }
 
-# =============================================================================
-#
-#  #    #    #  ######   ####
-#  #    ##   #  #       #    #
-#  #    # #  #  #####   #    #
-#  #    #  # #  #       #    #
-#  #    #   ##  #       #    #
-#  #    #    #  #        ####
-#
-def smilImageInfo(win = None):
-
-    title = '<center><h2>Image information</h2></center>'
-
-    size = win.image.getSize()[0:win.image.getDimension()]
-    sl = [
-      '<center>',
-      '<pre>',
-      'Name       : {:}'.format(win.image.getName()),
-      'Data type  : {:}'.format(win.image.getTypeAsString()),
-      'Dimensions : {:}'.format(win.image.getDimension()),
-      #'Size       : {:}'.format(win.image.getSize()),
-      'Size       : {:}'.format(size),
-      'Allocated  : {:} bytes'.format(win.image.getAllocatedSize()),
-      '',
-      'UUID       : {:}'.format(win.uuid),
-      '</pre>',
-      '</center>'
-    ]
-
-    if debug:
-      print('\n' + '\n'.join(sl))
-
-    mLen = 0
-    for s in sl:
-      mLen = max(mLen, len(s))
-    for i in range(len(sl)):
-      sl[i] = sl[i].ljust(mLen + 4)
-
-    sOut = '\n'.join(sl)
-
-    msgbox = QMessageBox();
-    msgbox.setText(title)
-    msgbox.setInformativeText(sOut)
-    msgbox.exec()
 
 # =============================================================================
 #
@@ -240,7 +152,6 @@ class smilGraphicsView(QGraphicsView):
     else:
       coeff = 255. / (uLim - lLim)
 
-    #sp.write(imt, "imt-{:05.2f}.png".format(parent.scaleValue))
     w = image.getWidth()
     h = image.getHeight()
     d = image.getDepth()
@@ -259,14 +170,14 @@ class smilGraphicsView(QGraphicsView):
   def setImage(self):
     parent = self.parent
 
-    self.imArray = self.smilToNumpyImage(z = parent.curSlice)
+    self.imArray = self.smilToNumpyImage(z=parent.curSlice)
     self.qImage = QImage(self.imArray, self.imArray.shape[1],
                          self.imArray.shape[0], QImage.Format_Indexed8)
 
     self.qPixmap = QPixmap.fromImage(self.qImage)
     self.qScene.addPixmap(self.qPixmap)
 
-  def update(self, factor = 1., sliderChanged=False):
+  def update(self, factor=1., sliderChanged=False):
     parent = self.parent
 
     if sliderChanged:
@@ -281,14 +192,13 @@ class smilGraphicsView(QGraphicsView):
         print("sceneRect   : {:}".format(self.sceneRect()))
 
     if factor == 0.:
-      factor = 1./parent.scaleValue
+      factor = 1. / parent.scaleValue
       self.scale(factor, factor)
       parent.scaleValue = 1.
 
       if debug:
         print("scaleValue : {:.3f}".format(parent.scaleValue))
         print("sceneRect   : {:}".format(self.sceneRect()))
-
 
     if debug:
       print("viewRect    : {:} {:}".format(self.width(), self.height()))
@@ -318,6 +228,7 @@ class smilGraphicsView(QGraphicsView):
     parent.mousePosition = event.pos()
     parent.updateViewHint()
 
+
 # =============================================================================
 #
 #  #    #    ##       #    #    #
@@ -331,6 +242,9 @@ class smilQtGui(QMainWindow):
   def __init__(self, img=None, label=False, name=None):
     super().__init__()
 
+    #self.uuid = uuid.uuid4()
+    self.uuid = spqt.SRegister.register(self)
+
     self.initializeMembers()
     self.initializeUI()
 
@@ -340,12 +254,12 @@ class smilQtGui(QMainWindow):
     self.setMouseTracking(True)
     self.show()
 
+    #print(" Registered as : {:}".format(self.uuid))
+
   #
   #
   #
   def initializeMembers(self):
-    self.uuid = uuid.uuid4()
-    self.imName = ''
     self.scaleValue = 1.
     self.scaleMax = 12.
     self.showLabel = False
@@ -361,8 +275,8 @@ class smilQtGui(QMainWindow):
 
     self.linkedWindows = []
 
-    self.mousePosition = QPoint(0,0)
-    self.lastPosition = QPoint(0,0)
+    self.mousePosition = QPoint(0, 0)
+    self.lastPosition = QPoint(0, 0)
 
   #
   #
@@ -421,6 +335,7 @@ class smilQtGui(QMainWindow):
     #file_menu.addAction(self.open_act)
     file_menu.addAction(self.list_act)
     file_menu.addSeparator()
+    file_menu.addAction(self.setName_act)
     file_menu.addAction(self.reload_act)
     file_menu.addAction(self.save_act)
     file_menu.addSeparator()
@@ -442,12 +357,10 @@ class smilQtGui(QMainWindow):
     view_menu.addAction(self.histogram_act)
     view_menu.addAction(self.info_act)
 
-
     # Create Tools menu
     tools_menu = self.menuBar().addMenu("Tools")
     tools_menu.addAction(self.link_act)
     tools_menu.addAction(self.unlink_act)
-
 
     # Create Help menu
     help_menu = self.menuBar().addMenu("Help")
@@ -461,17 +374,22 @@ class smilQtGui(QMainWindow):
     #
     # File menu
     #
-    self.list_act = QAction(QIcon("images/open_file.png"),"List Images")
+    self.list_act = QAction(QIcon("images/open_file.png"), "List Images")
     #self.list_act.setShortcut("Ctrl+S")
     self.list_act.setStatusTip("List images")
     self.list_act.triggered.connect(self.fn_list)
 
-    self.reload_act = QAction(QIcon("images/save_file.png"),"Reload image")
+    self.setName_act = QAction(QIcon("images/save_file.png"), "Set image name")
+    #self.setName_act.setShortcut("Ctrl+R")
+    self.setName_act.setStatusTip("Set image Name")
+    self.setName_act.triggered.connect(self.fn_setname)
+
+    self.reload_act = QAction(QIcon("images/save_file.png"), "Reload image")
     self.reload_act.setShortcut("Ctrl+R")
     self.reload_act.setStatusTip("Reload Image")
     self.reload_act.triggered.connect(self.fn_reload)
 
-    self.save_act = QAction(QIcon("images/save_file.png"),"Save Snapshot")
+    self.save_act = QAction(QIcon("images/save_file.png"), "Save Snapshot")
     self.save_act.setShortcut("Ctrl+S")
     self.save_act.setStatusTip("Save Snapshot")
     self.save_act.triggered.connect(self.fn_save)
@@ -543,8 +461,6 @@ class smilQtGui(QMainWindow):
     self.unlink_act.setStatusTip("Unlink linked images")
     self.unlink_act.triggered.connect(self.fn_unlink)
 
-
-
     #
     # Help menu
     #
@@ -553,9 +469,8 @@ class smilQtGui(QMainWindow):
     self.help_act.triggered.connect(self.fn_help)
 
     self.about_act = QAction("About")
-    self.about_act.setStatusTip("Help")
+    self.about_act.setStatusTip("About smilPyQtGui")
     self.about_act.triggered.connect(self.fn_about)
-
 
   #
   # I M A G E
@@ -595,7 +510,6 @@ class smilQtGui(QMainWindow):
   # EVENT HANDLERS
   #
   def updateViewHint(self):
-
     def isInImage(x, y):
       if x < 0 or x >= self.w:
         return False
@@ -616,7 +530,7 @@ class smilQtGui(QMainWindow):
       s.append("Slice : {:d}".format(self.curSlice))
 
     if isInImage(x, y):
-      v = self.image.getPixel(x,y, self.curSlice)
+      v = self.image.getPixel(x, y, self.curSlice)
       s.append("Mouse : ({:4d}, {:4d})".format(x, y))
       s.append("Pixel value : {}".format(v))
 
@@ -630,27 +544,31 @@ class smilQtGui(QMainWindow):
     print(inspect.stack()[0][3])
     pass
 
+  def fn_setname(self):
+    newName = spqd.smilGetImageName().getName()
+    if not newName is None and newName != '':
+      self.image.setName(newName)
+      self.imName = newName
+      self.setWindowTitle(self.imName)
+
   def fn_reload(self):
-    print(inspect.stack()[0][3])
     self.setupImage(self.image)
-    pass
 
   def fn_save(self):
-    print(inspect.stack()[0][3])
-    pass
+    self.saveImage()
 
   def fn_print(self):
-    print(inspect.stack()[0][3])
     self.printImage()
-    pass
 
   def fn_hide(self):
     print(inspect.stack()[0][3])
     pass
 
   def fn_close(self):
-    print(inspect.stack()[0][3])
-    pass
+    spqt.SRegister.unregister(self.uuid)
+    self.close()
+    if debug:
+      spqt.SRegister.print()
 
   #
   #
@@ -669,10 +587,10 @@ class smilQtGui(QMainWindow):
       self.update(factor=0.8)
 
   def fn_zoomReset(self):
-    self.update(factor = 0.)
+    self.update(factor=0.)
 
   def fn_info(self):
-    smilImageInfo(self)
+    spqd.smilImageInfo(self)
     return
 
   def fn_label(self):
@@ -691,7 +609,6 @@ class smilQtGui(QMainWindow):
         if histoMap[k] == 0:
           continue
         print('  {:3d} {:6d}'.format(k, histoMap[k]))
-    pass
 
   #
   #  T O O L S   M E N U
@@ -728,19 +645,22 @@ class smilQtGui(QMainWindow):
     self.curSlice = arg
     self.update(sliderChanged=True)
 
+  def closeEvent(self, event):
+    spqt.SRegister.unregister(self.uuid)
+    spqt.SRegister.print()
+    event.accept()
+
   def XmouseMoveEvent(self, event):
     mousePos = event.pos()
     posText = "Mouse Coordinates: ({}, {})".format(mousePos.x(), mousePos.y())
     print(posText)
 
   def XmousePressEvent(self, event):
-      """Handle when mouse is pressed."""
-      if event.button() == Qt.MouseButton.LeftButton:
-        print('  Left button')
-      else:
-        print('  Right button')
-
-
+    """Handle when mouse is pressed."""
+    if event.button() == Qt.MouseButton.LeftButton:
+      print('  Left button')
+    else:
+      print('  Right button')
 
   def printImage(self):
     """Print image and use QPrinter to select the
@@ -766,26 +686,76 @@ class smilQtGui(QMainWindow):
       painter.drawPixmap(0, 0, pixmap)
       painter.end()
 
+  def saveImage(self):
+    """Display QFileDialog to select image location and
+      save the image."""
+    image_file, _ = QFileDialog.getSaveFileName(
+      self, "Save Image", "", "JPG Files (*.jpeg *.jpg );;PNG Files (*.png);;\
+              Bitmap Files (*.bmp);;GIF Files (*.gif)")
+
+    pixmap = self.smScene.qPixmap
+    if image_file and pixmap.isNull() == False:
+      pixmap.save(image_file)
+    else:
+      QMessageBox.information(self, "Not Saved", "Image not saved.",
+                              QMessageBox.StandardButton.Ok)
 
 
 # =============================================================================
 #
+#  #    #    ##       #    #    #
+#  ##  ##   #  #      #    ##   #
+#  # ## #  #    #     #    # #  #
+#  #    #  ######     #    #  # #
+#  #    #  #    #     #    #   ##
+#  #    #  #    #     #    #    #
 #
-def registerWindow():
-  pass
+# -----------------------------------------------------------------------------
+#
+#
+def appLoadConfigFile(fconfig=None):
+  if fconfig is None:
+    return None
 
-def unregisterWindow():
-  pass
+  if not os.path.isfile(fconfig):
+    return None
+
+  config = cp.ConfigParser(interpolation=cp.ExtendedInterpolation(),
+                           default_section="default")
+
+  config.BOOLEAN_STATES['Vrai'] = True
+  config.BOOLEAN_STATES['Faux'] = False
+
+  config.read(fconfig)
+
+  return config
+
+
+# -----------------------------------------------------------------------------
+#
+#
+def appShowConfigFile(config=None):
+  if config is None:
+    return
+  sections = config.sections()
+  for ks in sections:
+    print("[{:s}]".format(ks))
+    s = config[ks]
+    for k in s.keys():
+      print("  {:20s} : {:s}".format(k, s[k]))
+      #print("  {:20s} : {:32s} # {:s}".format(k, s[k], s.get(k)))
+
+    print()
+
 
 # =============================================================================
 #
 #
 def main(cli, config, args=None):
-
   def mkImage(im):
     w = im.getWidth()
     h = im.getHeight()
-    m = min(h,w)
+    m = min(h, w)
     v = im.getDataTypeMax()
     #print(m, v)
     for i in range(0, m):
@@ -800,13 +770,12 @@ def main(cli, config, args=None):
     xmax = im.getWidth() // 2
     depth = im.getDepth()
     for z in range(0, depth):
-      for i in range(z,xmax-z):
-        im.setPixel(i + z,        z + xmax - 1 - i, z, 255)
-        im.setPixel(xmax + i - z, i + z,            z, 255)
-        im.setPixel(i + z,        xmax + i - z,     z, 255)
-        im.setPixel(xmax + i - z, 255 - i - z,      z, 255)
-    #sp.dilate(im, im)
-
+      for i in range(z, xmax - z):
+        im.setPixel(i + z, z + xmax - 1 - i, z, 255)
+        im.setPixel(xmax + i - z, i + z, z, 255)
+        im.setPixel(i + z, xmax + i - z, z, 255)
+        im.setPixel(xmax + i - z, 255 - i - z, z, 255)
+    sp.dilate(im, im)
 
   app = QApplication(sys.argv)
 
@@ -818,13 +787,13 @@ def main(cli, config, args=None):
   images.append(im)
 
   if True:
-    im = sp.Image(512,256)
+    im = sp.Image(512, 256)
     mkImage(im)
     im.setName("im 512x256")
     images.append(im)
 
   if True:
-    im = sp.Image(256, 256, 1,'UINT16')
+    im = sp.Image(256, 256, 1, 'UINT16')
     mkImage(im)
     im.setName("im 256x256 UINT16")
     images.append(im)
@@ -861,10 +830,10 @@ def main(cli, config, args=None):
   for im in images:
     w = smilQtGui(im)
     windows.append(w)
-    g.register(w.uuid, w)
+    spqt.SRegister.register(w)
 
   print()
-  g.list()
+  spqt.list()
 
   if True:
     r = input("Type any key to continue")
@@ -873,9 +842,6 @@ def main(cli, config, args=None):
     return app.exec_()
 
 
-# =============================================================================
-#
-#
 if __name__ == '__main__':
   import sys
 
@@ -896,4 +862,3 @@ if __name__ == '__main__':
     sys.exit(0)
 
   sys.exit(main(cli, config, sys.argv))
-

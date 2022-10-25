@@ -10,7 +10,7 @@ TO DO
   - Reload OK
   - How to handle "modified" signals ?
 
-* Magnifier
+* Magnifier - with or without overlay ???
 
 * Link manager from images
 
@@ -25,6 +25,12 @@ TO DO
 * About modal dialog
 
 * Save - from menu
+  - OK, but ...
+  qt.qpa.xcb: QXcbConnection: XCB error: 3 (BadWindow), sequence: 2718, \
+  resource id: 18219083, major code: 40 (TranslateCoords), minor code: 0
+
+  QT_LOGGING_RULES="*.debug=false"
+  export QT_LOGGING_RULES
 
 * Print - from menu
   - OK
@@ -32,8 +38,13 @@ TO DO
 * Set window title - use UUID ?
 
 * Histogramme
+  - make histogram map from image, OK
+  - still drawing with qwt to do
 
 * Labeled images
+
+* Set image name
+  - OK
 
 
 
