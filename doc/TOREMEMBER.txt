@@ -1,0 +1,23 @@
+
+
+
+text, ok = QInputDialog.getText(self, "New Item", "Add item:")
+if ok and text != "":
+  list_item = QListWidgetItem()
+  list_item.setText(text)
+  self.list_widget.addItem(list_item)
+
+*********************
+
+qt.qpa.xcb: QXcbConnection: XCB error: 3 (BadWindow), sequence: 2718, \
+  resource id: 18219083, major code: 40 (TranslateCoords), minor code: 0
+
+  QT_LOGGING_RULES="*.debug=false"
+  export QT_LOGGING_RULES
+
+*********************
+*********************
+*********************
+*********************
+*********************
+*********************

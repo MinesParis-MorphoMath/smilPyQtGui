@@ -155,7 +155,7 @@ def main(cli, config, args=None):
     xmax = im.getWidth() // 2
     depth = im.getDepth()
     for z in range(0, depth):
-      print("z {:3d}".format(z))
+      #print("z {:3d}".format(z))
       f = z % 64
       if z >= 64:
         f = 64 - f
@@ -239,7 +239,7 @@ def main(cli, config, args=None):
 #
 #
 if __name__ == '__main__':
-  import sys
+  os.environ['QT_LOGGING_RULES'] = "*.debug=false"
 
   cli = getCliArgs()
 

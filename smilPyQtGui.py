@@ -254,8 +254,6 @@ class smilQtGui(QMainWindow):
     self.setMouseTracking(True)
     self.show()
 
-    #print(" Registered as : {:}".format(self.uuid))
-
   #
   #
   #
@@ -273,7 +271,9 @@ class smilQtGui(QMainWindow):
     self.curSlice = 0
     self.imName = ''
 
-    self.linkedWindows = []
+    self.title = '{:s} - {:s}'.format(self.uuid, self.imName)
+
+    self.linkedImages = {}
 
     self.mousePosition = QPoint(0, 0)
     self.lastPosition = QPoint(0, 0)
@@ -285,18 +285,16 @@ class smilQtGui(QMainWindow):
     """Set up the application's GUI."""
     self.setMinimumSize(200, 200)
     #self.resize(self.w, self.h)
-    self.setWindowTitle("Smil Image ")
 
-    self.setUpMainWindow("Nouvelle fenetre")
+    self.setTitle()
+    self.setUpMainWindow()
     self.createActions()
     self.createMenu()
 
-    #self.show()
-
   #
   #
   #
-  def setUpMainWindow(self, title=None):
+  def setUpMainWindow(self):
 
     self.lbl1 = QLabel()
     self.lbl1.setText("Label 1")
@@ -360,7 +358,6 @@ class smilQtGui(QMainWindow):
     # Create Tools menu
     tools_menu = self.menuBar().addMenu("Tools")
     tools_menu.addAction(self.link_act)
-    tools_menu.addAction(self.unlink_act)
 
     # Create Help menu
     help_menu = self.menuBar().addMenu("Help")
@@ -451,15 +448,10 @@ class smilQtGui(QMainWindow):
     #
     # Tools menu
     #
-    self.link_act = QAction("Link ...")
-    self.link_act.setShortcut("Ctrl+L")
-    self.link_act.setStatusTip("Link images")
+    self.link_act = QAction("Link configuration...")
+    #self.link_act.setShortcut("Ctrl+L")
+    self.link_act.setStatusTip("Configure Linked images")
     self.link_act.triggered.connect(self.fn_link)
-
-    self.unlink_act = QAction("Unlink ...")
-    self.unlink_act.setShortcut("Ctrl+U")
-    self.unlink_act.setStatusTip("Unlink linked images")
-    self.unlink_act.triggered.connect(self.fn_unlink)
 
     #
     # Help menu
@@ -471,6 +463,15 @@ class smilQtGui(QMainWindow):
     self.about_act = QAction("About")
     self.about_act.setStatusTip("About smilPyQtGui")
     self.about_act.triggered.connect(self.fn_about)
+
+  #
+  #
+  #
+  def setTitle(self, imName=None):
+    if not imName is None:
+      self.imName = imName
+    self.title = 'ID {:s} - {:s}'.format(self.uuid, self.imName)
+    self.setWindowTitle(self.title)
 
   #
   # I M A G E
@@ -487,7 +488,7 @@ class smilQtGui(QMainWindow):
     self.imName = self.image.getName()
     if self.imName is None or self.imName == '':
       self.imName = "No name"
-    self.setWindowTitle(self.imName)
+    self.setTitle()
 
     self.slider.setMinimum(0)
     self.slider.setMaximum(self.d - 1)
@@ -542,6 +543,7 @@ class smilQtGui(QMainWindow):
   #
   def fn_list(self):
     print(inspect.stack()[0][3])
+    spqd.InfoNotYet()
     pass
 
   def fn_setname(self):
@@ -549,7 +551,7 @@ class smilQtGui(QMainWindow):
     if not newName is None and newName != '':
       self.image.setName(newName)
       self.imName = newName
-      self.setWindowTitle(self.imName)
+      self.setTitle()
 
   def fn_reload(self):
     self.setupImage(self.image)
@@ -562,6 +564,7 @@ class smilQtGui(QMainWindow):
 
   def fn_hide(self):
     print(inspect.stack()[0][3])
+    spqd.InfoNotYet()
     pass
 
   def fn_close(self):
@@ -595,10 +598,12 @@ class smilQtGui(QMainWindow):
 
   def fn_label(self):
     print(inspect.stack()[0][3])
+    spqd.InfoNotYet()
     pass
 
   def fn_magnify(self):
     print(inspect.stack()[0][3])
+    spqd.InfoNotYet()
     pass
 
   def fn_histogram(self):
@@ -609,28 +614,34 @@ class smilQtGui(QMainWindow):
         if histoMap[k] == 0:
           continue
         print('  {:3d} {:6d}'.format(k, histoMap[k]))
+    spqd.InfoNotYet("Graphic presentation of histogram to come...")
 
   #
   #  T O O L S   M E N U
   #
   def fn_link(self):
-    print(inspect.stack()[0][3])
-    pass
-
-  def fn_unlink(self):
-    print(inspect.stack()[0][3])
-    pass
+    dictAll = spqt.SRegister.list()
+    dictLnk = self.linkedImages
+    dictTmp = {}
+    for k in dictAll.keys():
+      dictTmp[k] = dictAll[k]
+    w = spqd.LinkDialog(self.imName, dictTmp, dictLnk)
+    dictLnkT, ok = w.run()
+    if ok:
+      self.linkedImages = {}
+      for k in dictLnkT.keys():
+        self.linkedImages[k] = dictLnkT[k]
 
   #
   #  H E L P   M E N U
   #
   def fn_help(self):
     print(inspect.stack()[0][3])
-    pass
+    spqd.InfoNotYet("Help to come...")
 
   def fn_about(self):
     print(inspect.stack()[0][3])
-    pass
+    spqd.InfoNotYet("About message to come...")
 
   #
   #
@@ -777,6 +788,9 @@ def main(cli, config, args=None):
         im.setPixel(xmax + i - z, 255 - i - z, z, 255)
     sp.dilate(im, im)
 
+  #
+  #
+  #
   app = QApplication(sys.argv)
 
   images = []

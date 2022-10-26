@@ -71,7 +71,7 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
                              QStatusBar, QTextEdit, QWidget, QDialog,
                              QGraphicsView, QGraphicsScene, QSlider, QLineEdit,
-                             QPushButton)
+                             QPushButton, QListWidget, QListWidgetItem)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
 import smilPyQtTools as spqt
@@ -82,16 +82,24 @@ import smilPyQtTools as spqt
 debug = False
 verbose = False
 
-
-def InfoMessageDialog(title=None, text=None):
+# =============================================================================
+#
+#
+def InfoMessageDialog(title=None, message=None):
   msgbox = QMessageBox()
   msgbox.setWindowTitle(title)
   title = '<center><b>' + title + '</b></center>'
-
   msgbox.setText(title)
-  msgbox.setInformativeText(text)
+  msgbox.setInformativeText(message)
   msgbox.exec()
 
+# =============================================================================
+#
+#
+def InfoNotYet(message=None):
+  if message is None:
+    message = "Not Yet Implemented"
+  InfoMessageDialog("Not Yet Implemented", message)
 
 # =============================================================================
 #
@@ -123,6 +131,178 @@ def smilImageInfo(win=None):
   sOut = '\n'.join(sl)
 
   InfoMessageDialog(title, sOut)
+
+# =============================================================================
+#
+#  #          #    #    #  #    #
+#  #          #    ##   #  #   #
+#  #          #    # #  #  ####
+#  #          #    #  # #  #  #
+#  #          #    #   ##  #   #
+#  ######     #    #    #  #    #
+#
+class MItem(QListWidgetItem):
+  def __init__(self, key, data):
+    super().__init__()
+    self.key = key
+    self.data = data
+
+  def text(self):
+    return '{:5s} {:s}'.format(self.key, self.data.imName)
+
+class LinkDialog(QDialog):
+  def __init__(self, imName='', All={}, Linked={}):
+    super().__init__()
+
+    if imName != '':
+      self.imName = imName
+    else:
+      self.imName = 'No Name'
+    self.All = All
+    self.Linked = Linked
+    self.rLinked = {}
+    self.ok = False
+
+    self.initializeUI()
+
+  def initializeUI(self):
+    """Set up the application's GUI."""
+    self.setMinimumSize(400, 200)
+    self.setWindowTitle(self.imName)
+
+    self.setUpMainWindow()
+    self.show()
+
+  def setUpMainWindow(self):
+    """Create and arrange widgets in the main window."""
+
+    label = QLabel()
+    label.setText('<h3><b>' + "Images linked to " + self.imName + '</b></h3>')
+    label.setAlignment(Qt.AlignCenter)
+
+    # Availlable images"
+    lbl_all = QLabel("All images")
+    lbl_all.setAlignment(Qt.AlignCenter)
+
+    self.list_all = QListWidget()
+    self.list_all.setAlternatingRowColors(True)
+
+    for item in self.All.keys():
+      if item in self.Linked:
+        continue
+      list_item = QListWidgetItem()
+      data = MItem(item, self.All[item])
+      list_item.data = data
+      list_item.setText(data.text())
+      self.list_all.addItem(list_item)
+
+    all_layout = QVBoxLayout()
+    all_layout.addWidget(lbl_all)
+    all_layout.addWidget(self.list_all)
+
+    # Linked images
+    lbl_lnk = QLabel("Linked images")
+    lbl_lnk.setAlignment(Qt.AlignCenter)
+
+    self.list_link = QListWidget()
+    self.list_link.setAlternatingRowColors(True)
+
+    for item in self.Linked.keys():
+      list_item = QListWidgetItem()
+      data = MItem(item, self.Linked[item])
+      list_item.data = data
+      list_item.setText(data.text())
+      self.list_link.addItem(list_item)
+
+    lnk_layout = QVBoxLayout()
+    lnk_layout.addWidget(lbl_lnk)
+    lnk_layout.addWidget(self.list_link)
+
+    add_button = QPushButton(">>")
+    add_button.clicked.connect(self.addListItem)
+
+    remove_button = QPushButton("<<")
+    remove_button.clicked.connect(self.removeOneItem)
+
+    buttons_layout = QVBoxLayout()
+    buttons_layout.addWidget(add_button)
+    buttons_layout.addWidget(remove_button)
+
+    list_layout = QHBoxLayout()
+    list_layout.addLayout(all_layout)
+    list_layout.addLayout(buttons_layout)
+    list_layout.addLayout(lnk_layout)
+
+    cancel_button = QPushButton("Cancel")
+    cancel_button.clicked.connect(self.cancel)
+    accept_button = QPushButton("OK")
+    accept_button.clicked.connect(self.accept)
+
+    vbuttons_layout = QHBoxLayout()
+    vbuttons_layout.addStretch()
+    vbuttons_layout.addWidget(cancel_button)
+    vbuttons_layout.addWidget(accept_button)
+
+    tout = QVBoxLayout()
+    tout.addWidget(label)
+    tout.addLayout(list_layout)
+    tout.addLayout(vbuttons_layout)
+
+    self.setLayout(tout)
+
+  def addListItem(self):
+    """Add a single item to the list widget."""
+    rowa = self.list_all.currentRow()
+    rowl = self.list_link.currentRow()
+    if rowa < 0:
+      return
+
+    allItem = self.list_all.currentItem()
+    data = allItem.data
+    lnkItem = QListWidgetItem(allItem)
+    lnkItem.data = data
+    self.list_link.addItem(lnkItem)
+
+    row = self.list_all.currentRow()
+    item = self.list_all.takeItem(row)
+    del item
+
+  def removeOneItem(self):
+    """Remove a single item from the list widget."""
+    rowa = self.list_all.currentRow()
+    rowl = self.list_link.currentRow()
+    if rowl < 0:
+      return
+
+    lnkItem = self.list_link.currentItem()
+    data = lnkItem.data
+    allItem = QListWidgetItem(lnkItem)
+    allItem.data = data
+    self.list_all.addItem(allItem)
+
+    row = self.list_link.currentRow()
+    item = self.list_link.takeItem(row)
+    del item
+
+  def cancel(self):
+    self.close()
+
+  def accept(self):
+    self.getLinkedList()
+    self.ok = True
+    self.close()
+
+  def getLinkedList(self):
+    self.rLinked = {}
+    l = self.list_link
+    for i in range(0, l.count()):
+      data = l.item(i).data
+      self.rLinked[data.key] = data.data
+
+  def run(self):
+    self.exec()
+    return self.rLinked, self.ok
+
 
 
 #

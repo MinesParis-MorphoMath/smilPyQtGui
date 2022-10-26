@@ -37,21 +37,24 @@
 #           Just created
 #
 
-images = {}
-
+class SmRegister:
+  def __init__(self, uuid=None, view=None):
+    self.uuid = uuid
+    self.view = view
 
 class WRegister:
   def __init__(self):
     self.reg = {}
     self.last = 0
+    self.sRegister = {}
 
   def register(self, view=None):
     if view is None:
       return
     self.last += 1
     uuid = "{:s}".format(str(self.last))
-    #uuid = uuid.uuid4()
     self.reg[uuid] = view
+    self.sRegister[uuid] = SmRegister(uuid, view)
     return uuid
 
   def unregister(self, uuid=None):
@@ -59,6 +62,11 @@ class WRegister:
       return
     if uuid in self.reg.keys():
       del self.reg[uuid]
+    else:
+      #print("uuid not in list")
+      pass
+    if uuid in self.sRegister.keys():
+      del self.sRegister[uuid]
     else:
       #print("uuid not in list")
       pass
@@ -75,7 +83,10 @@ class WRegister:
       print('    No windows registered')
 
   def list(self):
-    self.print()
+    return self.reg
+
+  def listRegisters(self):
+    pass
 
   def showAll(self):
     for k in self.reg.keys():
