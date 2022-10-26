@@ -62,7 +62,8 @@ from PyQt5.QtCore import Qt, QPoint, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
-                             QMainWindow, QMenu, QAction, qApp, QFileDialog,
+                             QMainWindow, QMenu, QAction, qApp,
+                             QFileDialog, QInputDialog,
                              QStatusBar, QTextEdit, QWidget, QDialog,
                              QGraphicsView, QGraphicsScene, QSlider, QLineEdit)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
@@ -542,9 +543,12 @@ class smilQtGui(QMainWindow):
   # I M A G E   M E N U
   #
   def fn_list(self):
-    print(inspect.stack()[0][3])
-    spqd.InfoNotYet()
-    pass
+    dictAll = spqt.SRegister.list()
+    dictTmp = {}
+    for k in dictAll.keys():
+      dictTmp[k] = dictAll[k]
+    w = spqd.ListImagesDialog(dictTmp)
+    w.run()
 
   def fn_setname(self):
     newName = spqd.smilGetImageName().getName()
@@ -625,7 +629,7 @@ class smilQtGui(QMainWindow):
     dictTmp = {}
     for k in dictAll.keys():
       dictTmp[k] = dictAll[k]
-    w = spqd.LinkDialog(self.imName, dictTmp, dictLnk)
+    w = spqd.LinkImagesDialog(self.imName, dictTmp, dictLnk)
     dictLnkT, ok = w.run()
     if ok:
       self.linkedImages = {}

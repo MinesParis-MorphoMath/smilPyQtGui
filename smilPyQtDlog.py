@@ -134,12 +134,12 @@ def smilImageInfo(win=None):
 
 # =============================================================================
 #
-#  #          #    #    #  #    #
-#  #          #    ##   #  #   #
-#  #          #    # #  #  ####
-#  #          #    #  # #  #  #
-#  #          #    #   ##  #   #
-#  ######     #    #    #  #    #
+#  #       #  #    #  #    #        #  #    #    ##     ####   ######   ####
+#  #       #  ##   #  #   #         #  ##  ##   #  #   #    #  #       #
+#  #       #  # #  #  ####          #  # ## #  #    #  #       #####    ####
+#  #       #  #  # #  #  #          #  #    #  ######  #  ###  #            #
+#  #       #  #   ##  #   #         #  #    #  #    #  #    #  #       #    #
+#  ######  #  #    #  #    #        #  #    #  #    #   ####   ######   ####
 #
 class MItem(QListWidgetItem):
   def __init__(self, key, data):
@@ -150,7 +150,7 @@ class MItem(QListWidgetItem):
   def text(self):
     return '{:5s} {:s}'.format(self.key, self.data.imName)
 
-class LinkDialog(QDialog):
+class LinkImagesDialog(QDialog):
   def __init__(self, imName='', All={}, Linked={}):
     super().__init__()
 
@@ -302,6 +302,83 @@ class LinkDialog(QDialog):
   def run(self):
     self.exec()
     return self.rLinked, self.ok
+
+# =============================================================================
+#
+#  #        #    ####    #####       #   #    #    ##     ####   ######   ####
+#  #        #   #          #         #   ##  ##   #  #   #    #  #       #
+#  #        #    ####      #         #   # ## #  #    #  #       #####    ####
+#  #        #        #     #         #   #    #  ######  #  ###  #            #
+#  #        #   #    #     #         #   #    #  #    #  #    #  #       #    #
+#  ######   #    ####      #         #   #    #  #    #   ####   ######   ####
+#
+class MItem(QListWidgetItem):
+  def __init__(self, key, data):
+    super().__init__()
+    self.key = key
+    self.data = data
+
+  def text(self):
+    return '{:5s} {:s}'.format(self.key, self.data.imName)
+
+class ListImagesDialog(QDialog):
+  def __init__(self, All={}):
+    super().__init__()
+    self.All = All
+    self.ok = False
+
+    self.initializeUI()
+
+  def initializeUI(self):
+    """Set up the application's GUI."""
+    self.setMinimumSize(400, 200)
+    self.setWindowTitle("Images")
+
+    self.setUpMainWindow()
+    self.show()
+
+  def setUpMainWindow(self):
+    """Create and arrange widgets in the main window."""
+
+    # Availlable images"
+    lbl_all = QLabel("All images")
+    lbl_all.setAlignment(Qt.AlignCenter)
+
+    self.list_all = QListWidget()
+    self.list_all.setAlternatingRowColors(True)
+
+    for item in self.All.keys():
+      list_item = QListWidgetItem()
+      data = MItem(item, self.All[item])
+      list_item.data = data
+      list_item.setText(data.text())
+      self.list_all.addItem(list_item)
+
+    all_layout = QVBoxLayout()
+    all_layout.addWidget(lbl_all)
+    all_layout.addWidget(self.list_all)
+
+    list_layout = QHBoxLayout()
+    list_layout.addLayout(all_layout)
+    accept_button = QPushButton("OK")
+    accept_button.clicked.connect(self.accept)
+
+    vbuttons_layout = QHBoxLayout()
+    vbuttons_layout.addStretch()
+    vbuttons_layout.addWidget(accept_button)
+
+    tout = QVBoxLayout()
+    tout.addLayout(list_layout)
+    tout.addLayout(vbuttons_layout)
+
+    self.setLayout(tout)
+
+  def accept(self):
+    self.ok = True
+    self.close()
+
+  def run(self):
+    self.exec()
 
 
 
