@@ -84,6 +84,103 @@ import smilPyQtTools as spqt
 debug = False
 verbose = False
 
+
+# =============================================================================
+#
+#
+class HelpDialog(QDialog):
+  def __init__(self, align=Qt.AlignLeft):
+    super().__init__()
+
+    message = ''
+    icon = None
+    align = Qt.AlignLeft
+
+    toc = """
+1. Menu Image
+2. Menu View
+3. Menu Tools
+4. Menu Help
+    """
+
+    message = """
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus cursus nisi non quam feugiat pellentesque. In porta risus non mauris tincidunt varius. Pellentesque semper sapien at tincidunt tempor. Donec sit amet viverra sem, vitae porta nulla. Integer turpis dolor, aliquet et nisi ac, blandit viverra erat. Aenean commodo ipsum diam, sed suscipit risus dignissim et. Donec sed felis at diam feugiat dapibus. Nullam tincidunt non ipsum eget convallis. Fusce sed quam dignissim, suscipit ligula eu, volutpat dui. Cras pellentesque rutrum ex in posuere.
+
+Sed fermentum vel nisl eu finibus. Nullam ante orci, posuere a eros vel, imperdiet sollicitudin justo. Ut blandit magna in volutpat facilisis. Proin vel erat arcu. Vivamus dignissim consequat massa ac consectetur. Quisque accumsan dolor sed commodo tristique. Fusce porta viverra augue quis tempor. Sed eget tortor sed erat viverra ultrices sit amet vitae lorem. Aliquam porta congue orci at imperdiet. Vivamus molestie ipsum eget ipsum hendrerit, vitae molestie nulla efficitur. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Etiam eget est odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut orci lacus, tempor vitae dignissim non, imperdiet in arcu.
+
+Nulla eget ex accumsan, accumsan risus sed, varius tellus. Nam dictum placerat erat quis tristique. Pellentesque metus ex, dictum a quam a, congue viverra eros. Etiam cursus facilisis urna sed imperdiet. Fusce at venenatis leo. Proin nec massa nisi. Morbi semper mollis enim, eu luctus ipsum vehicula sed. Sed vulputate, mauris nec ultrices pellentesque, augue nulla rutrum mauris, eu consectetur purus dolor sit amet lacus. Pellentesque nec turpis eros.
+
+Nulla vitae elit arcu. Fusce vel libero vitae magna varius congue vel commodo dui. Maecenas et felis non ex facilisis bibendum accumsan at felis. Fusce sodales auctor tortor, ultrices mollis quam luctus a. Donec consectetur arcu turpis. Suspendisse dui ante, pharetra sit amet lorem quis, cursus euismod massa. Mauris iaculis faucibus ipsum id lobortis. Aenean bibendum neque quis nunc malesuada lobortis. Sed in commodo arcu, a molestie velit. Praesent luctus orci non metus finibus vulputate. Quisque aliquam venenatis urna vel bibendum. Fusce interdum, diam quis vehicula sagittis, lorem nulla semper velit, id bibendum lacus eros eu lectus. Ut tincidunt ultricies sem. Suspendisse nibh eros, facilisis a nibh sit amet, mattis tristique leo. Curabitur id interdum ex. Cras ut neque maximus, pellentesque diam vitae, pharetra leo.
+
+Curabitur sed sollicitudin felis. Nullam eu odio sed purus lacinia fringilla. Nulla lorem massa, dignissim vitae pulvinar varius, eleifend vitae urna. Sed dui nisl, laoreet aliquet efficitur quis, eleifend at lacus. Fusce suscipit posuere arcu, nec commodo dolor viverra ut. Fusce eget pharetra lectus. Donec iaculis luctus vehicula. Cras rutrum varius tincidunt. Donec auctor tortor eu nibh venenatis euismod. Interdum et malesuada fames ac ante ipsum primis in faucibus.
+    """
+
+    self.title = "<h3>Help smilPyQtGui </h3>"
+    if isinstance(message, list):
+      self.message = '\n'.join(message)
+    else:
+      self.message = message
+    self.toc = toc
+    self.icon = icon
+    self.align = align
+
+    self.initializeUI()
+
+  def initializeUI(self):
+    self.setMinimumSize(384, 200)
+    self.setWindowTitle(self.title)
+
+    self.setUpMainWindow()
+    self.show()
+
+  def setUpMainWindow(self):
+    label = QLabel()
+    label.setText(self.title)
+    label.setAlignment(Qt.AlignCenter)
+
+    table = QTextEdit()
+    table.setText(self.toc)
+    table.setAlignment(self.align)
+    #table.setStyleSheet("border : 1px solid black;")
+    #table.setWordWrap(True)
+    table.setReadOnly(True)
+    table.setFixedWidth(140)
+
+    content = QTextEdit()
+    content.setText(self.message)
+    content.setAlignment(self.align)
+    #content.setStyleSheet("border : 1px solid black;")
+    #content.setWordWrap(True)
+    content.setReadOnly(True)
+    content.setMinimumWidth(240)
+
+    body_layout = QHBoxLayout()
+    body_layout.addWidget(table)
+    body_layout.addWidget(content)
+
+    ok_button = QPushButton("OK")
+    ok_button.clicked.connect(self.ok)
+
+    buttons_layout = QHBoxLayout()
+    buttons_layout.addStretch()
+    buttons_layout.addWidget(ok_button)
+
+    tout = QVBoxLayout()
+    tout.addWidget(label)
+    tout.addLayout(body_layout)
+    #tout.addStretch()
+    tout.addLayout(buttons_layout)
+
+    self.setLayout(tout)
+
+  def ok(self):
+    self.close()
+
+  def run(self):
+    self.exec()
+
+
+
 # =============================================================================
 #
 #
@@ -454,12 +551,15 @@ class ListImagesDialog(QDialog):
 #  #    #     #     ####      #     ####    ####   #    #  #    #  #    #
 #
 class smilHistogram(QDialog):
-  def __init__(self, title, x, y):
+  def __init__(self, view, x, y):
     super().__init__()
 
-    self.title = title
+    self.view = view
+    self.title = view.imName
     self.x = np.array(x)
     self.y = np.array(y)
+
+    self.mousePosition = QPoint(0, 0)
 
     self.initializeUI()
 
@@ -471,6 +571,8 @@ class smilHistogram(QDialog):
     self.setWindowTitle(self.title)
 
     self.setUpMainWindow()
+    self.setMouseTracking(True)
+
     self.show()
 
   def setUpMainWindow(self):
@@ -479,12 +581,14 @@ class smilHistogram(QDialog):
     label.setText('<h4>' + "Histogram : " + self.title + '</h4>')
     label.setAlignment(Qt.AlignCenter)
 
-    self.histo = Qwt.QwtPlot()
-    #self.histo.setTitle("Histogram\n" + self.title)
-    self.histo.setCanvasBackground(Qt.white)
-    #self.histo.insertLegend( Qwt.QwtLegend() )
+    self.plot = Qwt.QwtPlot(self)
+    #self.plot.setTitle("Histogram\n" + self.title)
+    self.plot.setCanvasBackground(Qt.white)
+    #self.plot.insertLegend( Qwt.QwtLegend() )
+    self.plot.setMouseTracking(True)
+
     self.grid = Qwt.QwtPlotGrid()
-    self.grid.attach(self.histo)
+    self.grid.attach(self.plot)
 
     curveSin = Qwt.QwtPlotCurve()
     #curveSin.setTitle("Some Points")
@@ -504,18 +608,21 @@ class smilHistogram(QDialog):
     #y = np.sin(x)
     #z = np.cos(x)
     curveSin.setSamples(self.x, self.y)
-    curveSin.attach(self.histo)
+    curveSin.attach(self.plot)
     #curveCos.setSamples(x, z)
-    #curveCos.attach(self.histo)
+    #curveCos.attach(self.plot)
+
+    xmax = self.view.image.getDataTypeMax()
+    self.plot.setAxisScale(Qwt.QwtPlot.xBottom, -1, xmax + 1, (xmax + 1) // 8)
 
     zoomer = Qwt.QwtPlotZoomer(Qwt.QwtPlot.xBottom, Qwt.QwtPlot.yLeft,
-                               self.histo.canvas())
+                               self.plot.canvas())
     zoomer.setZoomBase(False)
     zoomer.zoom(0)
 
-    self.histo.resize(600,400)
-    self.histo.replot()
-    self.histo.show()
+    self.plot.resize(600,400)
+    self.plot.replot()
+    self.plot.show()
 
     accept_button = QPushButton("OK", self)
     #accept_button.move(210, 90)
@@ -527,10 +634,19 @@ class smilHistogram(QDialog):
 
     vbox = QVBoxLayout()
     vbox.addWidget(label)
-    vbox.addWidget(self.histo)
+    vbox.addWidget(self.plot)
     vbox.addLayout(hbox)
 
     self.setLayout(vbox)
+
+  #
+  #   E V E N T S
+  #
+  def mouseMoveEvent(self, event):
+    self.mousePosition = event.pos()
+    x = int(self.mousePosition.x() + 0)
+    y = int(self.mousePosition.y() + 0)
+    #print("mouse : {:d} {:d}".format(x, y))
 
   def accept(self):
     self.close()

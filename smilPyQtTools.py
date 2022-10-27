@@ -97,6 +97,8 @@ class WRegister:
       self.reg[k].hide()
 
   def show(self, uuid):
+    if uuid in self.reg.keys():
+      self.reg[uuid].show()
     pass
 
   def hide(self, uuid):

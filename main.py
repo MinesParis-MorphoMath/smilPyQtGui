@@ -185,7 +185,7 @@ def main(cli, config, args=None):
     im = sp.Image()
     for i in range(0, im.getWidth()):
       for j in range(0, im.getHeight()):
-        im.setPixel(i, j, (i + j) % 256)
+        im.setPixel(i, j, (i + j) // 2 % 256)
     im.setName("im gradient")
     images.append(im)
 
@@ -237,7 +237,7 @@ def main(cli, config, args=None):
   #spqt.SRegister.showAll()
 
   if True:
-    r = input("Type any key to continue")
+    r = input("Type any key to quit")
     return r
   else:
     return app.exec_()

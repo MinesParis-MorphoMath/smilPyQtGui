@@ -631,7 +631,7 @@ class smilQtGui(QMainWindow):
     histoMap = sp.histogram(self.image)
     x = histoMap.keys()
     y = histoMap.values()
-    spqd.smilHistogram(self.imName, x, y).run()
+    spqd.smilHistogram(self, x, y).run()
     if verbose:
       for k in histoMap:
         if histoMap[k] == 0:
@@ -658,11 +658,9 @@ class smilQtGui(QMainWindow):
   #  H E L P   M E N U
   #
   def fn_help(self):
-    print(inspect.stack()[0][3])
-    spqd.InfoNotYet("Help to come...")
+    spqd.HelpDialog().run()
 
   def fn_about(self):
-    print(inspect.stack()[0][3])
     title = '<h2>' + 'smilPyQtGui' + '</h2>' + '<h2>' + 'v0.1' + '</h2>'
 
     message = [
