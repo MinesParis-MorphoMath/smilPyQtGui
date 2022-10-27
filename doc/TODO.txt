@@ -13,6 +13,7 @@ TO DO
 * Magnifier - with or without overlay ???
 
 * Link manager from images
+  - Dialogue de configuration OK
 
 * Close - destroy GUI - from menu
 
@@ -23,6 +24,7 @@ TO DO
 * Help modal dialog
 
 * About modal dialog
+  - OK
 
 * Save - from menu
   - OK, but ...
@@ -36,12 +38,14 @@ TO DO
   - OK
 
 * Set window title - use UUID ?
+  - OK
 
 * Histogramme
   - make histogram map from image, OK
   - still drawing with qwt to do
 
 * Labeled images
+  - OK
 
 * Set image name
   - OK

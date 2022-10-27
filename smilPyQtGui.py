@@ -62,10 +62,10 @@ from PyQt5.QtCore import Qt, QPoint, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
-                             QMainWindow, QMenu, QAction, qApp,
-                             QFileDialog, QInputDialog,
-                             QStatusBar, QTextEdit, QWidget, QDialog,
-                             QGraphicsView, QGraphicsScene, QSlider, QLineEdit)
+                             QMainWindow, QMenu, QAction, qApp, QFileDialog,
+                             QInputDialog, QStatusBar, QTextEdit, QWidget,
+                             QDialog, QGraphicsView, QGraphicsScene, QSlider,
+                             QLineEdit)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
 import smilPyQtDlog as spqd
@@ -597,8 +597,25 @@ class smilQtGui(QMainWindow):
     self.update(factor=0.)
 
   def fn_info(self):
-    spqd.smilImageInfo(self)
-    return
+    #spqd.smilImageInfo(self)
+    title = '<h4>' + 'Image information ' + self.imName + '</h4>'
+
+    size = self.image.getSize()[0:self.image.getDimension()]
+    sl = [
+    '<pre>', 'Name       : {:}'.format(self.image.getName()),
+    'Data type  : {:}'.format(self.image.getTypeAsString()),
+    'Dimensions : {:}'.format(self.image.getDimension()),
+    'Size       : {:}'.format(size),
+    'Allocated  : {:} bytes'.format(self.image.getAllocatedSize()), '',
+    'ID         : {:}'.format(self.uuid), '</pre>'
+    ]
+
+    mLen = 0
+    for s in sl:
+      mLen = max(mLen, len(s))
+    for i in range(len(sl)):
+      sl[i] = sl[i].ljust(mLen + 4)
+    spqd.ShowInfoDialog(title, sl, Qt.AlignCenter)
 
   def fn_label(self):
     print(inspect.stack()[0][3])
@@ -611,14 +628,15 @@ class smilQtGui(QMainWindow):
     pass
 
   def fn_histogram(self):
-    print(inspect.stack()[0][3])
     histoMap = sp.histogram(self.image)
+    x = histoMap.keys()
+    y = histoMap.values()
+    spqd.smilHistogram(self.imName, x, y).run()
     if verbose:
       for k in histoMap:
         if histoMap[k] == 0:
           continue
         print('  {:3d} {:6d}'.format(k, histoMap[k]))
-    spqd.InfoNotYet("Graphic presentation of histogram to come...")
 
   #
   #  T O O L S   M E N U
@@ -645,7 +663,16 @@ class smilQtGui(QMainWindow):
 
   def fn_about(self):
     print(inspect.stack()[0][3])
-    spqd.InfoNotYet("About message to come...")
+    title = '<h2>' + 'smilPyQtGui' + '</h2>' + '<h2>' + 'v0.1' + '</h2>'
+
+    message = [
+      'PyQt Graphical Interface for Smil Library', '',
+      'CMM - Centre de Morphologie Mathematique',
+      'Jose-Marcio Martins da Cruz', 'Jose-Marcio.Martins@minesparis.psl.eu',
+      '', 'https://github.com/MinesParis-MorphoMath/smilPyQtGui>github',
+      'https://github.com/MinesParis-MorphoMath/smil'
+    ]
+    spqd.ShowInfoDialog(title, message, Qt.AlignCenter)
 
   #
   #

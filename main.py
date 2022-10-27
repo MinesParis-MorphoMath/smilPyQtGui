@@ -182,6 +182,14 @@ def main(cli, config, args=None):
     images.append(im)
 
   if True:
+    im = sp.Image()
+    for i in range(0, im.getWidth()):
+      for j in range(0, im.getHeight()):
+        im.setPixel(i, j, (i + j) % 256)
+    im.setName("im gradient")
+    images.append(im)
+
+  if True:
     im = sp.Image(256, 256, 1, 'UINT16')
     mkImage(im)
     im.setName("im 256x256 UINT16")

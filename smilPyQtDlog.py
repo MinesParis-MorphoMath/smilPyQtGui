@@ -74,6 +74,8 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QPushButton, QListWidget, QListWidgetItem)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
+from PyQt5 import Qwt
+
 import smilPyQtTools as spqt
 
 # -----------------------------------------------------------------------------
@@ -81,6 +83,68 @@ import smilPyQtTools as spqt
 #
 debug = False
 verbose = False
+
+# =============================================================================
+#
+#
+class InfoDialog(QDialog):
+  def __init__(self, title='', message=None, icon=None, align=Qt.AlignLeft):
+    super().__init__()
+    self.title = title
+    if isinstance(message, list):
+      self.message = '\n'.join(message)
+    else:
+      self.message = message
+    self.icon = icon
+    self.align = align
+
+    self.initializeUI()
+
+  def initializeUI(self):
+    self.setMinimumSize(384, 100)
+    self.setWindowTitle(self.title)
+
+    self.setUpMainWindow()
+    self.show()
+
+  def setUpMainWindow(self):
+    label = QLabel()
+    label.setText(self.title)
+    label.setAlignment(Qt.AlignCenter)
+
+    message = QLabel()
+    message.setText(self.message)
+    message.setAlignment(self.align)
+    #message.setStyleSheet("border : 1px solid black;")
+    message.setWordWrap(True)
+
+    all_layout = QVBoxLayout()
+    all_layout.addWidget(label)
+    all_layout.addWidget(message)
+
+    ok_button = QPushButton("OK")
+    ok_button.clicked.connect(self.ok)
+
+    buttons_layout = QHBoxLayout()
+    buttons_layout.addStretch()
+    buttons_layout.addWidget(ok_button)
+
+    tout = QVBoxLayout()
+    tout.addLayout(all_layout)
+    tout.addStretch()
+    tout.addLayout(buttons_layout)
+
+    self.setLayout(tout)
+
+  def ok(self):
+    self.close()
+
+  def run(self):
+    self.exec()
+
+def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
+  idlog = InfoDialog(title, message, align)
+  idlog.run()
 
 # =============================================================================
 #
@@ -380,8 +444,101 @@ class ListImagesDialog(QDialog):
   def run(self):
     self.exec()
 
+# =============================================================================
+#
+#  #    #     #     ####    #####   ####    ####   #####     ##    #    #
+#  #    #     #    #          #    #    #  #    #  #    #   #  #   ##  ##
+#  ######     #     ####      #    #    #  #       #    #  #    #  # ## #
+#  #    #     #         #     #    #    #  #  ###  #####   ######  #    #
+#  #    #     #    #    #     #    #    #  #    #  #   #   #    #  #    #
+#  #    #     #     ####      #     ####    ####   #    #  #    #  #    #
+#
+class smilHistogram(QDialog):
+  def __init__(self, title, x, y):
+    super().__init__()
 
+    self.title = title
+    self.x = np.array(x)
+    self.y = np.array(y)
 
+    self.initializeUI()
+
+  def initializeUI(self):
+    #self.setMaximumSize(310, 130)
+    #self.setSize(400,300)
+    self.setMinimumSize(400, 300)
+
+    self.setWindowTitle(self.title)
+
+    self.setUpMainWindow()
+    self.show()
+
+  def setUpMainWindow(self):
+
+    label = QLabel()
+    label.setText('<h4>' + "Histogram : " + self.title + '</h4>')
+    label.setAlignment(Qt.AlignCenter)
+
+    self.histo = Qwt.QwtPlot()
+    #self.histo.setTitle("Histogram\n" + self.title)
+    self.histo.setCanvasBackground(Qt.white)
+    #self.histo.insertLegend( Qwt.QwtLegend() )
+    self.grid = Qwt.QwtPlotGrid()
+    self.grid.attach(self.histo)
+
+    curveSin = Qwt.QwtPlotCurve()
+    #curveSin.setTitle("Some Points")
+    curveSin.setPen(Qt.red, 1)
+    curveSin.setRenderHint(Qwt.QwtPlotItem.RenderAntialiased, True)
+
+#    curveCos = Qwt.QwtPlotCurve()
+    #curveCos.setTitle("Some Points")
+#    curveCos.setPen(Qt.red, 1)
+#    curveCos.setRenderHint(Qwt.QwtPlotItem.RenderAntialiased, True)
+
+    #symbol = Qwt.QwtSymbol(Qwt.QwtSymbol.Ellipse, QBrush(Qt.yellow),
+    #                       QPen(Qt.red, 2), QSize(8, 8))
+    #curve.setSymbol(symbol)
+
+    #x = np.arange(0, 10, 0.1)
+    #y = np.sin(x)
+    #z = np.cos(x)
+    curveSin.setSamples(self.x, self.y)
+    curveSin.attach(self.histo)
+    #curveCos.setSamples(x, z)
+    #curveCos.attach(self.histo)
+
+    zoomer = Qwt.QwtPlotZoomer(Qwt.QwtPlot.xBottom, Qwt.QwtPlot.yLeft,
+                               self.histo.canvas())
+    zoomer.setZoomBase(False)
+    zoomer.zoom(0)
+
+    self.histo.resize(600,400)
+    self.histo.replot()
+    self.histo.show()
+
+    accept_button = QPushButton("OK", self)
+    #accept_button.move(210, 90)
+    accept_button.clicked.connect(self.accept)
+
+    hbox = QHBoxLayout()
+    hbox.addStretch()
+    hbox.addWidget(accept_button)
+
+    vbox = QVBoxLayout()
+    vbox.addWidget(label)
+    vbox.addWidget(self.histo)
+    vbox.addLayout(hbox)
+
+    self.setLayout(vbox)
+
+  def accept(self):
+    self.close()
+
+  def run(self):
+    self.exec()
+
+# =============================================================================
 #
 #   ####   ######   #####    #    #    ##    #    #  ######
 #  #    #  #          #      ##   #   #  #   ##  ##  #
