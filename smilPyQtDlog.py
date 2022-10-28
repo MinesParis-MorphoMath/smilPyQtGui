@@ -87,6 +87,12 @@ verbose = False
 
 # =============================================================================
 #
+#  #    #  ######  #       #####
+#  #    #  #       #       #    #
+#  ######  #####   #       #    #
+#  #    #  #       #       #####
+#  #    #  #       #       #
+#  #    #  ######  ######  #
 #
 class HelpDialog(QDialog):
   def __init__(self, align=Qt.AlignLeft):
@@ -240,11 +246,16 @@ class InfoDialog(QDialog):
     self.exec()
 
 def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
-  idlog = InfoDialog(title, message, align)
-  idlog.run()
+  idlog = InfoDialog(title, message, align).run()
 
 # =============================================================================
 #
+#  #    #    #  ######   ####
+#  #    ##   #  #       #    #
+#  #    # #  #  #####   #    #
+#  #    #  # #  #       #    #
+#  #    #   ##  #       #    #
+#  #    #    #  #        ####
 #
 def InfoMessageDialog(title=None, message=None):
   msgbox = QMessageBox()
@@ -262,36 +273,8 @@ def InfoNotYet(message=None):
     message = "Not Yet Implemented"
   InfoMessageDialog("Not Yet Implemented", message)
 
-# =============================================================================
-#
-#  #    #    #  ######   ####
-#  #    ##   #  #       #    #
-#  #    # #  #  #####   #    #
-#  #    #  # #  #       #    #
-#  #    #   ##  #       #    #
-#  #    #    #  #        ####
-#
-def smilImageInfo(win=None):
-  title = 'Image information'
 
-  size = win.image.getSize()[0:win.image.getDimension()]
-  sl = [
-    '<center>', '<pre>', 'Name       : {:}'.format(win.image.getName()),
-    'Data type  : {:}'.format(win.image.getTypeAsString()),
-    'Dimensions : {:}'.format(win.image.getDimension()),
-    'Size       : {:}'.format(size),
-    'Allocated  : {:} bytes'.format(win.image.getAllocatedSize()), '',
-    'ID         : {:}'.format(win.uuid), '</pre>', '</center>'
-  ]
 
-  mLen = 0
-  for s in sl:
-    mLen = max(mLen, len(s))
-  for i in range(len(sl)):
-    sl[i] = sl[i].ljust(mLen + 4)
-  sOut = '\n'.join(sl)
-
-  InfoMessageDialog(title, sOut)
 
 # =============================================================================
 #
@@ -521,18 +504,43 @@ class ListImagesDialog(QDialog):
 
     list_layout = QHBoxLayout()
     list_layout.addLayout(all_layout)
+    hide_button = QPushButton("Hide")
+    hide_button.clicked.connect(self.hide)
+    show_button = QPushButton("Show")
+    show_button.clicked.connect(self.show)
     accept_button = QPushButton("OK")
     accept_button.clicked.connect(self.accept)
 
-    vbuttons_layout = QHBoxLayout()
-    vbuttons_layout.addStretch()
-    vbuttons_layout.addWidget(accept_button)
+    buttons_layout = QHBoxLayout()
+    buttons_layout.addStretch()
+    buttons_layout.addWidget(hide_button)
+    buttons_layout.addWidget(show_button)
+    buttons_layout.addWidget(accept_button)
 
     tout = QVBoxLayout()
     tout.addLayout(list_layout)
-    tout.addLayout(vbuttons_layout)
+    tout.addLayout(buttons_layout)
 
     self.setLayout(tout)
+
+  def hide(self):
+    row = self.list_all.currentRow()
+    if row < 0:
+      return
+
+    item = self.list_all.currentItem()
+    data = item.data.data
+    data.hide()
+
+  def show(self):
+    row = self.list_all.currentRow()
+    if row < 0:
+      return
+
+    item = self.list_all.currentItem()
+    data = item.data.data
+    print(type(data))
+    data.show()
 
   def accept(self):
     self.ok = True
@@ -564,8 +572,6 @@ class smilHistogram(QDialog):
     self.initializeUI()
 
   def initializeUI(self):
-    #self.setMaximumSize(310, 130)
-    #self.setSize(400,300)
     self.setMinimumSize(400, 300)
 
     self.setWindowTitle(self.title)
@@ -619,6 +625,8 @@ class smilHistogram(QDialog):
                                self.plot.canvas())
     zoomer.setZoomBase(False)
     zoomer.zoom(0)
+
+    self.plot.setGeometry(0,0,600,400)
 
     self.plot.resize(600,400)
     self.plot.replot()

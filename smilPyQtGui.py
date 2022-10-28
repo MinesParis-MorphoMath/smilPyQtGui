@@ -77,29 +77,6 @@ import smilPyQtTools as spqt
 debug = False
 verbose = False
 
-
-def getCliArgs():
-  parser = ap.ArgumentParser()
-
-  parser.add_argument('--debug', help='', action="store_true")
-  parser.add_argument('--verbose', help='', action="store_true")
-
-  parser.add_argument('--showconf', help='', action="store_true")
-  parser.add_argument('--showargs', help='', action="store_true")
-
-  parser.add_argument('--int', default=None, help='PID to monitor', type=int)
-  parser.add_argument('--str', default="String", help='A string', type=str)
-
-  cli = parser.parse_args()
-
-  global debug, verbose
-
-  debug = cli.debug
-  verbose = cli.verbose
-
-  return cli
-
-
 # =============================================================================
 #
 #
@@ -372,7 +349,7 @@ class smilQtGui(QMainWindow):
     #
     # File menu
     #
-    self.list_act = QAction(QIcon("images/open_file.png"), "List Images")
+    self.list_act = QAction(QIcon("images/open_file.png"), "Show/Hide Images")
     #self.list_act.setShortcut("Ctrl+S")
     self.list_act.setStatusTip("List images")
     self.list_act.triggered.connect(self.fn_list)
@@ -398,12 +375,12 @@ class smilQtGui(QMainWindow):
     self.print_act.triggered.connect(self.fn_print)
     #self.print_act.setEnabled(False)
 
-    self.hide_act = QAction(QIcon("images/exit.png"), "Hide Window")
+    self.hide_act = QAction(QIcon("images/exit.png"), "Hide")
     self.hide_act.setShortcut("Ctrl+Q")
     self.hide_act.setStatusTip("Hide Window")
     self.hide_act.triggered.connect(self.fn_hide)
 
-    self.close_act = QAction(QIcon("images/exit.png"), "Close Window")
+    self.close_act = QAction(QIcon("images/exit.png"), "Close")
     self.close_act.setShortcut("Ctrl+W")
     self.close_act.setStatusTip("Close Window")
     self.close_act.triggered.connect(self.fn_close)
@@ -547,8 +524,7 @@ class smilQtGui(QMainWindow):
     dictTmp = {}
     for k in dictAll.keys():
       dictTmp[k] = dictAll[k]
-    w = spqd.ListImagesDialog(dictTmp)
-    w.run()
+    w = spqd.ListImagesDialog(dictTmp).run()
 
   def fn_setname(self):
     newName = spqd.smilGetImageName().getName()
@@ -567,9 +543,7 @@ class smilQtGui(QMainWindow):
     self.printImage()
 
   def fn_hide(self):
-    print(inspect.stack()[0][3])
-    spqd.InfoNotYet()
-    pass
+    self.hide()
 
   def fn_close(self):
     spqt.SRegister.unregister(self.uuid)
@@ -597,7 +571,6 @@ class smilQtGui(QMainWindow):
     self.update(factor=0.)
 
   def fn_info(self):
-    #spqd.smilImageInfo(self)
     title = '<h4>' + 'Image information ' + self.imName + '</h4>'
 
     size = self.image.getSize()[0:self.image.getDimension()]
@@ -753,155 +726,18 @@ class smilQtGui(QMainWindow):
 # -----------------------------------------------------------------------------
 #
 #
-def appLoadConfigFile(fconfig=None):
-  if fconfig is None:
-    return None
-
-  if not os.path.isfile(fconfig):
-    return None
-
-  config = cp.ConfigParser(interpolation=cp.ExtendedInterpolation(),
-                           default_section="default")
-
-  config.BOOLEAN_STATES['Vrai'] = True
-  config.BOOLEAN_STATES['Faux'] = False
-
-  config.read(fconfig)
-
-  return config
-
-
-# -----------------------------------------------------------------------------
-#
-#
-def appShowConfigFile(config=None):
-  if config is None:
-    return
-  sections = config.sections()
-  for ks in sections:
-    print("[{:s}]".format(ks))
-    s = config[ks]
-    for k in s.keys():
-      print("  {:20s} : {:s}".format(k, s[k]))
-      #print("  {:20s} : {:32s} # {:s}".format(k, s[k], s.get(k)))
-
-    print()
 
 
 # =============================================================================
 #
 #
-def main(cli, config, args=None):
-  def mkImage(im):
-    w = im.getWidth()
-    h = im.getHeight()
-    m = min(h, w)
-    v = im.getDataTypeMax()
-    #print(m, v)
-    for i in range(0, m):
-      im.setPixel(i, i, v)
-      im.setPixel(m - 1 - i, i, v)
-      im.setPixel(i, m // 2, v)
-      im.setPixel(i, m // 2 + 1, v)
-      im.setPixel(m // 2, i, v)
-      im.setPixel(m // 2 + 1, i, v)
+def main(args=None):
 
-  def mk3DImage(im):
-    xmax = im.getWidth() // 2
-    depth = im.getDepth()
-    for z in range(0, depth):
-      for i in range(z, xmax - z):
-        im.setPixel(i + z, z + xmax - 1 - i, z, 255)
-        im.setPixel(xmax + i - z, i + z, z, 255)
-        im.setPixel(i + z, xmax + i - z, z, 255)
-        im.setPixel(xmax + i - z, 255 - i - z, z, 255)
-    sp.dilate(im, im)
-
-  #
-  #
-  #
-  app = QApplication(sys.argv)
-
-  images = []
-
-  im = sp.Image()
-  mkImage(im)
-  im.setName("im 256x256")
-  images.append(im)
-
-  if True:
-    im = sp.Image(512, 256)
-    mkImage(im)
-    im.setName("im 512x256")
-    images.append(im)
-
-  if True:
-    im = sp.Image(256, 256, 1, 'UINT16')
-    mkImage(im)
-    im.setName("im 256x256 UINT16")
-    images.append(im)
-
-  if True:
-    im = sp.Image()
-    w = im.getWidth()
-    h = im.getHeight()
-    hc = h // 2
-    for i in range(0, w):
-      for j in range(hc - 8, hc + 8):
-        im.setPixel(i, j, 255)
-    im.setName("im 256x256 HBAR")
-    images.append(im)
-
-  if True:
-    im = sp.Image(256, 256, 64)
-    mk3DImage(im)
-    sp.dilate(im, im)
-    im.setName("im 3D 256x256x64")
-    images.append(im)
-
-  files = ["images/astronaut-bw.png", "images/astronaut-small.png"]
-  files = ["images/astronaut-bw.png"]
-  for fim in files:
-    if not os.path.isfile(fim):
-      continue
-    im = sp.Image(fim)
-    #sp.scale(im, 0.5, im)
-    im.setName(fim)
-    images.append(im)
-
-  windows = []
-  for im in images:
-    w = smilQtGui(im)
-    windows.append(w)
-    spqt.SRegister.register(w)
-
-  print()
-  spqt.list()
-
-  if True:
-    r = input("Type any key to continue")
-    return r
-  else:
-    return app.exec_()
+  print("Not yet...")
 
 
 if __name__ == '__main__':
   import sys
 
-  cli = getCliArgs()
 
-  bAppl = os.path.basename(sys.argv[0])
-  bConf = bAppl.replace('.py', '.conf')
-  fConfig = os.path.join('etc', bConf)
-  config = None
-  if os.path.isfile(fConfig):
-    config = appLoadConfigFile(fConfig)
-
-  if cli.showconf:
-    appShowConfigFile(config)
-  if cli.showargs:
-    showArgs(cli, True)
-  if cli.showconf or cli.showargs:
-    sys.exit(0)
-
-  sys.exit(main(cli, config, sys.argv))
+  sys.exit(main(sys.argv))
