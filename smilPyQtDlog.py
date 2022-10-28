@@ -259,7 +259,6 @@ def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
 #  #    #    #  #        ####
 #
 def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
-
   def HtmlEnclose(txt, tag=[]):
     if tag is None:
       return txt
@@ -273,7 +272,7 @@ def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
     return txt
 
   msgbox = QMessageBox()
-  msgbox.setMinimumSize(250,100)
+  msgbox.setMinimumSize(250, 100)
   level = level.lower()
   if level == 'info':
     msgbox.setIcon(msgbox.Information)
@@ -288,6 +287,7 @@ def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
   message = HtmlEnclose(message, mStyle)
   msgbox.setInformativeText(message)
   msgbox.exec()
+
 
 def InfoMessageDialog(title=None, message=None, level=''):
   ShowMessage(title, message, level)
@@ -328,14 +328,21 @@ def InfoNotYet(message=None):
 #  #       #  #   ##  #   #         #  #    #  #    #  #    #  #       #    #
 #  ######  #  #    #  #    #        #  #    #  #    #   ####   ######   ####
 #
-class MItem(QListWidgetItem):
+class MListItem(QListWidgetItem):
   def __init__(self, key, data):
     super().__init__()
     self.key = key
     self.data = data
 
-  def text(self):
+  def textOld(self):
     return '{:5s} {:s}'.format(self.key, self.data.imName)
+
+  def text(self):
+    if self.data.isVisible():
+      visible = 'V'
+    else:
+      visible = 'H'
+    return '{:s} - {:5s} {:s}'.format(visible, self.key, self.data.imName)
 
 
 class LinkImagesDialog(QDialog):
@@ -381,7 +388,7 @@ class LinkImagesDialog(QDialog):
       if item in self.Linked:
         continue
       list_item = QListWidgetItem()
-      data = MItem(item, self.All[item])
+      data = MListItem(item, self.All[item])
       list_item.data = data
       list_item.setText(data.text())
       self.list_all.addItem(list_item)
@@ -399,7 +406,7 @@ class LinkImagesDialog(QDialog):
 
     for item in self.Linked.keys():
       list_item = QListWidgetItem()
-      data = MItem(item, self.Linked[item])
+      data = MListItem(item, self.Linked[item])
       list_item.data = data
       list_item.setText(data.text())
       self.list_link.addItem(list_item)
@@ -445,6 +452,7 @@ class LinkImagesDialog(QDialog):
     rowa = self.list_all.currentRow()
     rowl = self.list_link.currentRow()
     if rowa < 0:
+      ShowMessage('Error', 'No item selected', 'warn')
       return
 
     allItem = self.list_all.currentItem()
@@ -453,7 +461,7 @@ class LinkImagesDialog(QDialog):
     if data.data.image.getSize() != self.curView.image.getSize():
       title = 'Link configuration error'
       message = 'Only images having the same size can be linked'
-      ShowMessage(title, message, level = 'warn')
+      ShowMessage(title, message, level='warn')
       return
 
     lnkItem = QListWidgetItem(allItem)
@@ -469,6 +477,7 @@ class LinkImagesDialog(QDialog):
     rowa = self.list_all.currentRow()
     rowl = self.list_link.currentRow()
     if rowl < 0:
+      ShowMessage('Error', 'No item selected', 'warn')
       return
 
     lnkItem = self.list_link.currentItem()
@@ -548,7 +557,7 @@ class ListImagesDialog(QDialog):
 
     for item in self.All.keys():
       list_item = QListWidgetItem()
-      data = MItem(item, self.All[item])
+      data = MListItem(item, self.All[item])
       list_item.data = data
       list_item.setText(data.text())
       self.list_all.addItem(list_item)
@@ -581,6 +590,12 @@ class ListImagesDialog(QDialog):
 
     self.setLayout(tout)
 
+  def redrawList(self):
+    for row in range(0, self.list_all.count()):
+      item = self.list_all.item(row)
+      data = item.data
+      item.setText(data.text())
+
   def hide(self):
     row = self.list_all.currentRow()
     if row < 0:
@@ -589,6 +604,7 @@ class ListImagesDialog(QDialog):
     item = self.list_all.currentItem()
     data = item.data.data
     data.hide()
+    self.redrawList()
 
   def show(self):
     row = self.list_all.currentRow()
@@ -598,15 +614,17 @@ class ListImagesDialog(QDialog):
     item = self.list_all.currentItem()
     data = item.data.data
     data.show()
+    self.redrawList()
 
   def showall(self):
-    print("Entering show all")
+    #print("Entering show all")
     for row in range(0, self.list_all.count()):
       #print("  handling row {:d}".format(row))
       item = self.list_all.item(row)
       data = item.data.data
       #print("  image name : {:s}".format(item.data.data.imName))
       data.show()
+    self.redrawList()
 
   def accept(self):
     self.ok = True
