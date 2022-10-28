@@ -283,6 +283,7 @@ class smilQtGui(QMainWindow):
     self.slider.setMaximum(99)
     self.slider.setTracking(True)
     self.slider.valueChanged[int].connect(self.sliderValueChanged)
+    self.slider.setVisible(False)
 
     self.smScene = smilGraphicsView(self)
 
@@ -470,6 +471,8 @@ class smilQtGui(QMainWindow):
 
     self.slider.setMinimum(0)
     self.slider.setMaximum(self.d - 1)
+    if self.d > 1:
+      self.slider.setVisible(True)
 
     self.smScene.setImage()
     self.update()
@@ -488,14 +491,14 @@ class smilQtGui(QMainWindow):
   #
   # EVENT HANDLERS
   #
-  def updateViewHint(self):
-    def isInImage(x, y):
-      if x < 0 or x >= self.w:
-        return False
-      if y < 0 or y >= self.h:
-        return False
-      return True
+  def isInImage(self, x, y):
+    if x < 0 or x >= self.w:
+      return False
+    if y < 0 or y >= self.h:
+      return False
+    return True
 
+  def updateViewHint(self):
     dx, dy = self.smScene.getScrollValues()
     x = int(self.mousePosition.x() + dx)
     y = int(self.mousePosition.y() + dy)
@@ -508,7 +511,30 @@ class smilQtGui(QMainWindow):
     if self.d > 1:
       s.append("Slice : {:d}".format(self.curSlice))
 
-    if isInImage(x, y):
+    if self.isInImage(x, y):
+      v = self.image.getPixel(x, y, self.curSlice)
+      s.append("Mouse : ({:4d}, {:4d})".format(x, y))
+      s.append("Pixel value : {}".format(v))
+
+    sOut = " - ".join(s)
+    self.lbl1.setText(sOut)
+
+    # update linked images
+    for k in self.linkedImages.keys():
+      view = self.linkedImages[k]
+      uuid = view.uuid
+      if not spqt.SRegister.isRegistered(uuid):
+        del self.linkedImages[k]
+      view.updateViwHintFromOther(x, y)
+
+
+  def updateViwHintFromOther(self, x, y):
+    s = []
+    s.append("Scale : {:5.1f} %".format(100 * self.scaleValue))
+    if self.d > 1:
+      s.append("Slice : {:d}".format(self.curSlice))
+
+    if self.isInImage(x, y):
       v = self.image.getPixel(x, y, self.curSlice)
       s.append("Mouse : ({:4d}, {:4d})".format(x, y))
       s.append("Pixel value : {}".format(v))
@@ -620,7 +646,7 @@ class smilQtGui(QMainWindow):
     dictTmp = {}
     for k in dictAll.keys():
       dictTmp[k] = dictAll[k]
-    w = spqd.LinkImagesDialog(self.imName, dictTmp, dictLnk)
+    w = spqd.LinkImagesDialog(self, dictTmp, dictLnk)
     dictLnkT, ok = w.run()
     if ok:
       self.linkedImages = {}
@@ -662,18 +688,6 @@ class smilQtGui(QMainWindow):
     spqt.SRegister.unregister(self.uuid)
     spqt.SRegister.print()
     event.accept()
-
-  def XmouseMoveEvent(self, event):
-    mousePos = event.pos()
-    posText = "Mouse Coordinates: ({}, {})".format(mousePos.x(), mousePos.y())
-    print(posText)
-
-  def XmousePressEvent(self, event):
-    """Handle when mouse is pressed."""
-    if event.button() == Qt.MouseButton.LeftButton:
-      print('  Left button')
-    else:
-      print('  Right button')
 
   def printImage(self):
     """Print image and use QPrinter to select the

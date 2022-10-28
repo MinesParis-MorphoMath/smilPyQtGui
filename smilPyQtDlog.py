@@ -186,7 +186,6 @@ Curabitur sed sollicitudin felis. Nullam eu odio sed purus lacinia fringilla. Nu
     self.exec()
 
 
-
 # =============================================================================
 #
 #
@@ -245,8 +244,10 @@ class InfoDialog(QDialog):
   def run(self):
     self.exec()
 
+
 def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
   idlog = InfoDialog(title, message, align).run()
+
 
 # =============================================================================
 #
@@ -257,13 +258,57 @@ def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
 #  #    #   ##  #       #    #
 #  #    #    #  #        ####
 #
-def InfoMessageDialog(title=None, message=None):
+def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
+
+  def HtmlEnclose(txt, tag=[]):
+    if tag is None:
+      return txt
+    tags = []
+    if isinstance(tag, str):
+      tags.append(tag)
+    else:
+      tags = tag
+    for t in tags:
+      txt = '<{:s}>{:s}</:s>'.format(tag, txt, tag)
+    return txt
+
   msgbox = QMessageBox()
+  msgbox.setMinimumSize(250,100)
+  level = level.lower()
+  if level == 'info':
+    msgbox.setIcon(msgbox.Information)
+  elif level in ['warn', 'warning']:
+    msgbox.setIcon(msgbox.Warning)
+  elif level == 'critical':
+    msgbox.setIcon(msgbox.Critical)
+
+  msgbox.setWindowTitle(title)
+  title = HtmlEnclose(title, tStyle)
+  msgbox.setText(title)
+  message = HtmlEnclose(message, mStyle)
+  msgbox.setInformativeText(message)
+  msgbox.exec()
+
+def InfoMessageDialog(title=None, message=None, level=''):
+  ShowMessage(title, message, level)
+  return
+
+  msgbox = QMessageBox()
+  msgbox.setIcon(msgbox.Warning)
+  level = level.lower()
+  if level == 'info':
+    msgbox.setIcon(msgbox.Information)
+  elif level == 'warning':
+    msgbox.setIcon(msgbox.Warning)
+  elif level == 'critical':
+    msgbox.setIcon(msgbox.Critical)
+
   msgbox.setWindowTitle(title)
   title = '<center><b>' + title + '</b></center>'
   msgbox.setText(title)
   msgbox.setInformativeText(message)
   msgbox.exec()
+
 
 # =============================================================================
 #
@@ -271,9 +316,7 @@ def InfoMessageDialog(title=None, message=None):
 def InfoNotYet(message=None):
   if message is None:
     message = "Not Yet Implemented"
-  InfoMessageDialog("Not Yet Implemented", message)
-
-
+  InfoMessageDialog("Not Yet Implemented", message, 'info')
 
 
 # =============================================================================
@@ -294,11 +337,14 @@ class MItem(QListWidgetItem):
   def text(self):
     return '{:5s} {:s}'.format(self.key, self.data.imName)
 
+
 class LinkImagesDialog(QDialog):
-  def __init__(self, imName='', All={}, Linked={}):
+  def __init__(self, curView=None, All={}, Linked={}):
     super().__init__()
 
-    if imName != '':
+    self.curView = curView
+    imName = curView.imName
+    if not imName is None and imName != '':
       self.imName = imName
     else:
       self.imName = 'No Name'
@@ -403,6 +449,13 @@ class LinkImagesDialog(QDialog):
 
     allItem = self.list_all.currentItem()
     data = allItem.data
+
+    if data.data.image.getSize() != self.curView.image.getSize():
+      title = 'Link configuration error'
+      message = 'Only images having the same size can be linked'
+      ShowMessage(title, message, level = 'warn')
+      return
+
     lnkItem = QListWidgetItem(allItem)
     lnkItem.data = data
     self.list_link.addItem(lnkItem)
@@ -447,6 +500,7 @@ class LinkImagesDialog(QDialog):
     self.exec()
     return self.rLinked, self.ok
 
+
 # =============================================================================
 #
 #  #        #    ####    #####       #   #    #    ##     ####   ######   ####
@@ -456,7 +510,7 @@ class LinkImagesDialog(QDialog):
 #  #        #   #    #     #         #   #    #  #    #  #    #  #       #    #
 #  ######   #    ####      #         #   #    #  #    #   ####   ######   ####
 #
-class MItem(QListWidgetItem):
+class XMItem(QListWidgetItem):
   def __init__(self, key, data):
     super().__init__()
     self.key = key
@@ -464,6 +518,7 @@ class MItem(QListWidgetItem):
 
   def text(self):
     return '{:5s} {:s}'.format(self.key, self.data.imName)
+
 
 class ListImagesDialog(QDialog):
   def __init__(self, All={}):
@@ -539,7 +594,6 @@ class ListImagesDialog(QDialog):
 
     item = self.list_all.currentItem()
     data = item.data.data
-    print(type(data))
     data.show()
 
   def accept(self):
@@ -548,6 +602,7 @@ class ListImagesDialog(QDialog):
 
   def run(self):
     self.exec()
+
 
 # =============================================================================
 #
@@ -601,10 +656,10 @@ class smilHistogram(QDialog):
     curveSin.setPen(Qt.red, 1)
     curveSin.setRenderHint(Qwt.QwtPlotItem.RenderAntialiased, True)
 
-#    curveCos = Qwt.QwtPlotCurve()
+    #    curveCos = Qwt.QwtPlotCurve()
     #curveCos.setTitle("Some Points")
-#    curveCos.setPen(Qt.red, 1)
-#    curveCos.setRenderHint(Qwt.QwtPlotItem.RenderAntialiased, True)
+    #    curveCos.setPen(Qt.red, 1)
+    #    curveCos.setRenderHint(Qwt.QwtPlotItem.RenderAntialiased, True)
 
     #symbol = Qwt.QwtSymbol(Qwt.QwtSymbol.Ellipse, QBrush(Qt.yellow),
     #                       QPen(Qt.red, 2), QSize(8, 8))
@@ -626,9 +681,9 @@ class smilHistogram(QDialog):
     zoomer.setZoomBase(False)
     zoomer.zoom(0)
 
-    self.plot.setGeometry(0,0,600,400)
+    self.plot.setGeometry(0, 0, 600, 400)
 
-    self.plot.resize(600,400)
+    self.plot.resize(600, 400)
     self.plot.replot()
     self.plot.show()
 
@@ -661,6 +716,7 @@ class smilHistogram(QDialog):
 
   def run(self):
     self.exec()
+
 
 # =============================================================================
 #

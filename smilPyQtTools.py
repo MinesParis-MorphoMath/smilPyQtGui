@@ -71,6 +71,11 @@ class WRegister:
       #print("uuid not in list")
       pass
 
+  def isRegistered(self, uuid=None):
+    if not uuid is None and uuid in self.reg.keys():
+      return True
+    return False
+
   def print(self):
     print()
     if len(self.reg.keys()) > 0:
