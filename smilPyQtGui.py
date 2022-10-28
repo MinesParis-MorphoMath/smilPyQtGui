@@ -59,7 +59,7 @@ import numpy as np
 import smilPython as sp
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize
-from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
+from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon, QColor, qRgb
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
@@ -103,9 +103,16 @@ class smilGraphicsView(QGraphicsView):
     self.parent = parent
     width, height = parent.width(), parent.height()
 
+    self.baseColorTable = []
+    self.rainbowColorTable = []
+    self.labelColorTable = []
+    self.showLabel = False
+    self.initColorTables()
+
     self.qScene = QGraphicsScene()
     self.setScene(self.qScene)
     self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
     self.setMouseTracking(True)
 
     self.show()
@@ -152,13 +159,18 @@ class smilGraphicsView(QGraphicsView):
     self.qImage = QImage(self.imArray, self.imArray.shape[1],
                          self.imArray.shape[0], QImage.Format_Indexed8)
 
+    if self.showLabel:
+      self.qImage.setColorTable(self.labelColorTable)
+    else:
+      self.qImage.setColorTable(self.baseColorTable)
+
     self.qPixmap = QPixmap.fromImage(self.qImage)
     self.qScene.addPixmap(self.qPixmap)
 
-  def update(self, factor=1., sliderChanged=False):
+  def update(self, factor=1., sliderChanged=False, colorTableChanged=False):
     parent = self.parent
 
-    if sliderChanged:
+    if sliderChanged or colorTableChanged:
       self.setImage()
 
     if factor > 0 and factor != 1:
@@ -187,6 +199,19 @@ class smilGraphicsView(QGraphicsView):
       print("Scroll bar : {:d} {:d}".format(hb, vb))
 
     #self.qScene.update(self.qRect)
+
+  def initColorTables(self):
+    for i in range(0,256):
+      self.baseColorTable.append(qRgb( i, i, i))
+    self.rainbowColorTable = []
+    for i in range(0, 256):
+      self.rainbowColorTable.append(QColor.fromHsvF(i / 256., 1.0, 1.0).rgb())
+
+    self.labelColorTable.append(qRgb(0, 0, 0))
+    curC = 0
+    for i in range(0, 255):
+      self.labelColorTable.append(self.rainbowColorTable[curC])
+      curC = (curC + 47) % 256
 
   #
   # U I
@@ -409,7 +434,7 @@ class smilQtGui(QMainWindow):
     self.magnify_act.setStatusTip("Close look around pointer")
     self.magnify_act.triggered.connect(self.fn_magnify)
 
-    self.label_act = QAction("Show labelled image")
+    self.label_act = QAction("Toggle show image as label")
     self.label_act.setShortcut("Ctrl+L")
     self.label_act.setStatusTip("Show labelled image")
     self.label_act.triggered.connect(self.fn_label)
@@ -481,8 +506,8 @@ class smilQtGui(QMainWindow):
     print(fmt.format(self.imType, self.w, self.h, self.d))
 
   #
-  def update(self, factor=1., sliderChanged=False):
-    self.smScene.update(factor, sliderChanged)
+  def update(self, factor=1., sliderChanged=False, colorTableChanged=False):
+    self.smScene.update(factor, sliderChanged, colorTableChanged)
     #self.resize(self.w * self.scale + 20, self.h * self.scale + 80)
 
     self.updateViewHint()
@@ -617,8 +642,8 @@ class smilQtGui(QMainWindow):
     spqd.ShowInfoDialog(title, sl, Qt.AlignCenter)
 
   def fn_label(self):
-    print(inspect.stack()[0][3])
-    spqd.InfoNotYet()
+    self.smScene.showLabel = not self.smScene.showLabel
+    self.update(colorTableChanged=True)
     pass
 
   def fn_magnify(self):

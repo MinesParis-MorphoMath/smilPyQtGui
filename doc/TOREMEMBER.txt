@@ -16,6 +16,48 @@ qt.qpa.xcb: QXcbConnection: XCB error: 3 (BadWindow), sequence: 2718, \
   export QT_LOGGING_RULES
 
 *********************
+
+void ImageViewerWidget::initColorTables()
+{
+  baseColorTable.clear();
+  for (int i = 0; i < 256; i++)
+    baseColorTable.append(qRgb(i, i, i));
+
+  rainbowColorTable.clear();
+
+  rainbowColorTable.clear();
+  for (int i = 0; i < 256; i++)
+    rainbowColorTable.append(
+        QColor::fromHsvF(double(i) / 256., 1.0, 1.0).rgb());
+
+  labelColorTable.clear();
+  labelColorTable.append(qRgb(0, 0, 0));
+  unsigned char curC = 0;
+  for (int i = 0; i < 255; i++, curC += 47)
+    labelColorTable.append(rainbowColorTable[curC]);
+
+  overlayColorTable.clear();
+  overlayColorTable = labelColorTable;
+}
+
+void ImageViewerWidget::setLabelImage(bool val)
+{
+  if (drawLabelized == val)
+    return;
+
+  drawLabelized = val;
+  if (drawLabelized)
+    qImage->setColorTable(labelColorTable);
+  else
+    qImage->setColorTable(baseColorTable);
+  //     imagePixmap->setPixmap(QPixmap::fromImage(*qImage));
+
+  if (magnActivated && lastPixX >= 0)
+    displayMagnifyView();
+}
+
+
+
 *********************
 *********************
 *********************

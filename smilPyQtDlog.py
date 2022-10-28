@@ -563,6 +563,8 @@ class ListImagesDialog(QDialog):
     hide_button.clicked.connect(self.hide)
     show_button = QPushButton("Show")
     show_button.clicked.connect(self.show)
+    showall_button = QPushButton("Show all")
+    showall_button.clicked.connect(self.showall)
     accept_button = QPushButton("OK")
     accept_button.clicked.connect(self.accept)
 
@@ -570,6 +572,7 @@ class ListImagesDialog(QDialog):
     buttons_layout.addStretch()
     buttons_layout.addWidget(hide_button)
     buttons_layout.addWidget(show_button)
+    buttons_layout.addWidget(showall_button)
     buttons_layout.addWidget(accept_button)
 
     tout = QVBoxLayout()
@@ -595,6 +598,15 @@ class ListImagesDialog(QDialog):
     item = self.list_all.currentItem()
     data = item.data.data
     data.show()
+
+  def showall(self):
+    print("Entering show all")
+    for row in range(0, self.list_all.count()):
+      #print("  handling row {:d}".format(row))
+      item = self.list_all.item(row)
+      data = item.data.data
+      #print("  image name : {:s}".format(item.data.data.imName))
+      data.show()
 
   def accept(self):
     self.ok = True

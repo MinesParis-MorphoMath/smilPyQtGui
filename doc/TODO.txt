@@ -14,20 +14,25 @@ TO DO
 
 * Link manager from images
   - Dialogue de configuration OK
+  - display pixel value OK
+  - TODO - management of scroll bars on the linked image
 
 * Close - destroy GUI - from menu
+  - OK
 
 * Destroy GUI - from library
 
 * Overlays ???
 
 * Help modal dialog
+  - Created - need to add text
 
 * About modal dialog
   - OK
 
 * Save - from menu
-  - OK, but ...
+  - OK, but ... Image is saved as RGB, even for BW or Gray images
+
   qt.qpa.xcb: QXcbConnection: XCB error: 3 (BadWindow), sequence: 2718, \
   resource id: 18219083, major code: 40 (TranslateCoords), minor code: 0
 

@@ -214,7 +214,10 @@ def main(cli, config, args=None):
     images.append(im)
 
   files = ["images/astronaut-bw.png", "images/astronaut-small.png"]
-  files = ["images/astronaut-bw.png", "images/distances.png"]
+  files = [
+    "images/astronaut-bw.png", "images/distances.png", "images/eutectic.png",
+    "images/eutectic-label.png"
+  ]
   for fim in files:
     if not os.path.isfile(fim):
       continue
