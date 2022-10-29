@@ -65,14 +65,16 @@ import numpy as np
 import smilPython as sp
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize
-from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon
+from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon, QFont
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QMainWindow, QMenu, QAction, qApp, QFileDialog,
                              QStatusBar, QTextEdit, QWidget, QDialog,
                              QGraphicsView, QGraphicsScene, QSlider, QLineEdit,
                              QPushButton, QListWidget, QListWidgetItem)
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
+
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QGridLayout
+
 
 from PyQt5 import Qwt
 
@@ -188,55 +190,70 @@ Curabitur sed sollicitudin felis. Nullam eu odio sed purus lacinia fringilla. Nu
 
 # =============================================================================
 #
+#  #    #    #  ######   ####
+#  #    ##   #  #       #    #
+#  #    # #  #  #####   #    #
+#  #    #  # #  #       #    #
+#  #    #   ##  #       #    #
+#  #    #    #  #        ####
 #
-class InfoDialog(QDialog):
-  def __init__(self, title='', message=None, icon=None, align=Qt.AlignLeft):
+class ShowImageInfo(QDialog):
+
+  def __init__(self, title='Title', label='label', infos = []):
     super().__init__()
+
     self.title = title
-    if isinstance(message, list):
-      self.message = '\n'.join(message)
-    else:
-      self.message = message
-    self.icon = icon
-    self.align = align
+    self.label = label
+    self.infos = infos
 
     self.initializeUI()
 
   def initializeUI(self):
-    self.setMinimumSize(384, 100)
+    """Set up the application's GUI."""
+    self.setMinimumSize(350, 100)
     self.setWindowTitle(self.title)
 
     self.setUpMainWindow()
     self.show()
 
   def setUpMainWindow(self):
-    label = QLabel()
-    label.setText(self.title)
-    label.setAlignment(Qt.AlignCenter)
+    """Create and arrange widgets in the main window."""
+    name_label = QLabel(self.label)
+    name_label.setFont(QFont("Arial", 12))
+    name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    message = QLabel()
-    message.setText(self.message)
-    message.setAlignment(self.align)
-    #message.setStyleSheet("border : 1px solid black;")
-    message.setWordWrap(True)
-
-    all_layout = QVBoxLayout()
-    all_layout.addWidget(label)
-    all_layout.addWidget(message)
+    grid_layout = QGridLayout()
+    #grid_layout.setStyleSheet("border : 1px solid black;")
+    for row in range(0, len(self.infos)):
+      if len(self.infos[row]) == 0:
+        continue
+      name = self.infos[row][0]
+      value = self.infos[row][1]
+      item_name = QLabel(name + '  : ')
+      item_name.setAlignment(Qt.AlignmentFlag.AlignRight)
+      item_value = QLabel(value)
+      item_value.setAlignment(Qt.AlignmentFlag.AlignLeft)
+      #if len(self.infos[row][0]) > 0:
+        #item_sep = QLabel(':')
+      grid_layout.addWidget(item_name, row, 0)
+      #if len(self.infos[row][0]) > 0:
+      #  grid_layout.addWidget(item_sep, row, 1)
+      grid_layout.addWidget(item_value, row, 1)
 
     ok_button = QPushButton("OK")
     ok_button.clicked.connect(self.ok)
 
-    buttons_layout = QHBoxLayout()
-    buttons_layout.addStretch()
-    buttons_layout.addWidget(ok_button)
+    button_layout = QHBoxLayout()
+    button_layout.addStretch()
+    button_layout.addWidget(ok_button)
 
-    tout = QVBoxLayout()
-    tout.addLayout(all_layout)
-    tout.addStretch()
-    tout.addLayout(buttons_layout)
+    all_layout = QVBoxLayout()
+    all_layout.addWidget(name_label)
+    all_layout.addLayout(grid_layout)
+    all_layout.addLayout(button_layout)
 
-    self.setLayout(tout)
+    # Set the layout for the main window
+    self.setLayout(all_layout)
 
   def ok(self):
     self.close()
@@ -244,19 +261,17 @@ class InfoDialog(QDialog):
   def run(self):
     self.exec()
 
-
-def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
-  idlog = InfoDialog(title, message, align).run()
-
+  def closeEvent(self, event):
+    pass
 
 # =============================================================================
 #
-#  #    #    #  ######   ####
-#  #    ##   #  #       #    #
-#  #    # #  #  #####   #    #
-#  #    #  # #  #       #    #
-#  #    #   ##  #       #    #
-#  #    #    #  #        ####
+#   ####   #    #   ####   #    #      #    #  ######   ####    ####
+#  #       #    #  #    #  #    #      ##  ##  #       #       #    #
+#   ####   ######  #    #  #    #      # ## #  #####    ####   #
+#       #  #    #  #    #  # ## #      #    #  #            #  #  ###
+#  #    #  #    #  #    #  ##  ##      #    #  #       #    #  #    #
+#   ####   #    #   ####   #    #      #    #  ######   ####    ####
 #
 def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
   def HtmlEnclose(txt, tag=[]):
@@ -288,7 +303,15 @@ def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
   msgbox.setInformativeText(message)
   msgbox.exec()
 
-
+# =============================================================================
+#
+#  #    #   ####    #####   #   #  ######   #####
+#  ##   #  #    #     #      # #   #          #
+#  # #  #  #    #     #       #    #####      #
+#  #  # #  #    #     #       #    #          #
+#  #   ##  #    #     #       #    #          #
+#  #    #   ####      #       #    ######     #
+#
 def InfoMessageDialog(title=None, message=None, level=''):
   ShowMessage(title, message, level)
   return
@@ -317,7 +340,6 @@ def InfoNotYet(message=None):
   if message is None:
     message = "Not Yet Implemented"
   InfoMessageDialog("Not Yet Implemented", message, 'info')
-
 
 # =============================================================================
 #

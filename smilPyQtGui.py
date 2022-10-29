@@ -333,18 +333,20 @@ class smilQtGui(QMainWindow):
     self.menuBar().setNativeMenuBar(False)
 
     # Create File menu and add actions
-    file_menu = self.menuBar().addMenu("Image")
-    #file_menu.addAction(self.open_act)
-    file_menu.addAction(self.list_act)
-    file_menu.addSeparator()
-    file_menu.addAction(self.setName_act)
-    file_menu.addAction(self.reload_act)
-    file_menu.addAction(self.save_act)
-    file_menu.addSeparator()
-    file_menu.addAction(self.print_act)
-    file_menu.addSeparator()
-    file_menu.addAction(self.hide_act)
-    file_menu.addAction(self.close_act)
+    image_menu = self.menuBar().addMenu("Image")
+    image_menu.addAction(self.list_act)
+    image_menu.addAction(self.hide_act)
+
+    image_menu.addSeparator()
+    image_menu.addAction(self.setName_act)
+    image_menu.addAction(self.reload_act)
+
+    image_menu.addSeparator()
+    image_menu.addAction(self.save_act)
+    image_menu.addAction(self.print_act)
+
+    image_menu.addSeparator()
+    image_menu.addAction(self.close_act)
 
     # Create View menu and add actions
     view_menu = self.menuBar().addMenu("View")
@@ -355,13 +357,14 @@ class smilQtGui(QMainWindow):
     view_menu.addAction(self.magnify_act)
     view_menu.addSeparator()
     view_menu.addAction(self.label_act)
-    view_menu.addSeparator()
-    view_menu.addAction(self.histogram_act)
-    view_menu.addAction(self.info_act)
+
 
     # Create Tools menu
     tools_menu = self.menuBar().addMenu("Tools")
     tools_menu.addAction(self.link_act)
+    tools_menu.addSeparator()
+    tools_menu.addAction(self.histogram_act)
+    tools_menu.addAction(self.info_act)
 
     # Create Help menu
     help_menu = self.menuBar().addMenu("Help")
@@ -621,26 +624,6 @@ class smilQtGui(QMainWindow):
   def fn_zoomReset(self):
     self.update(factor=0.)
 
-  def fn_info(self):
-    title = '<h4>' + 'Image information ' + self.imName + '</h4>'
-
-    size = self.image.getSize()[0:self.image.getDimension()]
-    sl = [
-    '<pre>', 'Name       : {:}'.format(self.image.getName()),
-    'Data type  : {:}'.format(self.image.getTypeAsString()),
-    'Dimensions : {:}'.format(self.image.getDimension()),
-    'Size       : {:}'.format(size),
-    'Allocated  : {:} bytes'.format(self.image.getAllocatedSize()), '',
-    'ID         : {:}'.format(self.uuid), '</pre>'
-    ]
-
-    mLen = 0
-    for s in sl:
-      mLen = max(mLen, len(s))
-    for i in range(len(sl)):
-      sl[i] = sl[i].ljust(mLen + 4)
-    spqd.ShowInfoDialog(title, sl, Qt.AlignCenter)
-
   def fn_label(self):
     self.smScene.showLabel = not self.smScene.showLabel
     self.update(colorTableChanged=True)
@@ -650,17 +633,6 @@ class smilQtGui(QMainWindow):
     print(inspect.stack()[0][3])
     spqd.InfoNotYet()
     pass
-
-  def fn_histogram(self):
-    histoMap = sp.histogram(self.image)
-    x = histoMap.keys()
-    y = histoMap.values()
-    spqd.smilHistogram(self, x, y).run()
-    if verbose:
-      for k in histoMap:
-        if histoMap[k] == 0:
-          continue
-        print('  {:3d} {:6d}'.format(k, histoMap[k]))
 
   #
   #  T O O L S   M E N U
@@ -677,6 +649,41 @@ class smilQtGui(QMainWindow):
       self.linkedImages = {}
       for k in dictLnkT.keys():
         self.linkedImages[k] = dictLnkT[k]
+
+  def fn_histogram(self):
+    histoMap = sp.histogram(self.image)
+    x = histoMap.keys()
+    y = histoMap.values()
+    spqd.smilHistogram(self, x, y).run()
+    if verbose:
+      for k in histoMap:
+        if histoMap[k] == 0:
+          continue
+        print('  {:3d} {:6d}'.format(k, histoMap[k]))
+
+  def fn_info(self):
+    size = self.image.getSize()
+    Min = sp.minVal(self.image)
+    Max = sp.maxVal(self.image)
+    mean, stdev = sp.meanVal(self.image)
+    median = sp.medianVal(self.image)
+
+    infos = []
+    infos.append(['View ID','{:}'.format(self.uuid)])
+
+    infos.append(['Name','{:}'.format(self.image.getName())])
+    infos.append(['Data type','{:}'.format(self.image.getTypeAsString())])
+    infos.append(['Dimensions','{:}'.format(self.image.getDimension())])
+    infos.append(['Size','{:}'.format(size)])
+    infos.append(['Allocated','{:} bytes'.format(self.image.getAllocatedSize())])
+
+    infos.append(['Min / Max','{:d} / {:d}'.format(Min, Max)])
+    infos.append(['Median','{:d}'.format(median)])
+    infos.append(['Mean / StdDev','{:.2f} / {:.2f}'.format(mean, stdev)])
+
+    title = 'Image information '
+    label = '<h4>' + self.imName + '</h4>'
+    spqd.ShowImageInfo(title, label, infos).run()
 
   #
   #  H E L P   M E N U
