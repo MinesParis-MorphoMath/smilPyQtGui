@@ -1,44 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-#  smilMainWindow.py
-#
-#  Copyright 2022 José Marcio Martins da Cruz <martins@jose-marcio.org>
-#
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions are
-#  met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following disclaimer
-#    in the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of the  nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-#  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-
-#
-# This script does...
-#
-# History : xx/xx/xxxx - Jose-Marcio Martins da Cruz
-#           Just created
-#
 
 import os
 import sys
@@ -55,53 +14,16 @@ import datetime
 import time
 
 import argparse as ap
-import configparser as cp
 
 import math as m
 import numpy as np
 
 import smilPython as sp
 
-from smilPyQtGui import *
+from smilPyQtView import *
 
 import smilPyQtTools as spqt
 
-
-# -----------------------------------------------------------------------------
-#
-#
-def appLoadConfigFile(fconfig=None):
-  if fconfig is None:
-    return None
-
-  if not os.path.isfile(fconfig):
-    return None
-
-  config = cp.ConfigParser(interpolation=cp.ExtendedInterpolation(),
-                           default_section="default")
-
-  config.BOOLEAN_STATES['Vrai'] = True
-  config.BOOLEAN_STATES['Faux'] = False
-
-  config.read(fconfig)
-
-  return config
-
-
-# -----------------------------------------------------------------------------
-#
-#
-def appShowConfigFile(config=None):
-  if config is None:
-    return
-  sections = config.sections()
-  for ks in sections:
-    print("[{:s}]".format(ks))
-    s = config[ks]
-    for k in s.keys():
-      print("  {:20s} : {:s}".format(k, s[k]))
-
-    print()
 
 
 # -----------------------------------------------------------------------------
@@ -117,11 +39,8 @@ def getCliArgs():
   parser.add_argument('--debug', help='', action="store_true")
   parser.add_argument('--verbose', help='', action="store_true")
 
-  parser.add_argument('--showconf', help='', action="store_true")
-  parser.add_argument('--showargs', help='', action="store_true")
-
-  parser.add_argument('--int', default=None, help='PID to monitor', type=int)
-  parser.add_argument('--str', default="String", help='A string', type=str)
+  #parser.add_argument('--int', default=None, help='PID to monitor', type=int)
+  #parser.add_argument('--str', default="String", help='A string', type=str)
 
   cli = parser.parse_args()
 
@@ -132,11 +51,10 @@ def getCliArgs():
 
   return cli
 
-
 # =============================================================================
 #
 #
-def main(cli, config, args=None):
+def initImages():
   def mkImage(im):
     w = im.getWidth()
     h = im.getHeight()
@@ -166,7 +84,6 @@ def main(cli, config, args=None):
         im.setPixel(xmax + i - f, 255 - i - f, z, 255)
     sp.dilate(im, im)
 
-  app = QApplication(sys.argv)
 
   images = []
 
@@ -213,7 +130,6 @@ def main(cli, config, args=None):
     im.setName("im 3D 256x256x64")
     images.append(im)
 
-  files = ["images/astronaut-bw.png", "images/astronaut-small.png"]
   files = [
     "images/astronaut-bw.png", "images/distances.png", "images/eutectic.png",
     "images/eutectic-label.png"
@@ -226,10 +142,21 @@ def main(cli, config, args=None):
     im.setName(fim)
     images.append(im)
 
-  windows = []
+  return images
+
+# =============================================================================
+#
+#
+def main(cli, args=None):
+
+  images = initImages()
+
+  app = QApplication(sys.argv)
+
+  views = []
   for im in images:
-    w = smilQtGui(im)
-    windows.append(w)
+    view = smilQtView(im)
+    views.append(view)
 
   print()
 
@@ -254,18 +181,4 @@ if __name__ == '__main__':
 
   cli = getCliArgs()
 
-  bAppl = os.path.basename(sys.argv[0])
-  bConf = bAppl.replace('.py', '.conf')
-  fConfig = os.path.join('etc', bConf)
-  config = None
-  if os.path.isfile(fConfig):
-    config = appLoadConfigFile(fConfig)
-
-  if cli.showconf:
-    appShowConfigFile(config)
-  if cli.showargs:
-    showArgs(cli, True)
-  if cli.showconf or cli.showargs:
-    sys.exit(0)
-
-  sys.exit(main(cli, config, sys.argv))
+  sys.exit(main(cli, sys.argv))

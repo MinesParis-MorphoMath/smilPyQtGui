@@ -75,7 +75,6 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
 
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QGridLayout
 
-
 from PyQt5 import Qwt
 
 import smilPyQtTools as spqt
@@ -198,8 +197,7 @@ Curabitur sed sollicitudin felis. Nullam eu odio sed purus lacinia fringilla. Nu
 #  #    #    #  #        ####
 #
 class ShowImageInfo(QDialog):
-
-  def __init__(self, title='Title', label='label', infos = []):
+  def __init__(self, title='Title', label='label', infos=[]):
     super().__init__()
 
     self.title = title
@@ -234,7 +232,7 @@ class ShowImageInfo(QDialog):
       item_value = QLabel(value)
       item_value.setAlignment(Qt.AlignmentFlag.AlignLeft)
       #if len(self.infos[row][0]) > 0:
-        #item_sep = QLabel(':')
+      #item_sep = QLabel(':')
       grid_layout.addWidget(item_name, row, 0)
       #if len(self.infos[row][0]) > 0:
       #  grid_layout.addWidget(item_sep, row, 1)
@@ -263,6 +261,7 @@ class ShowImageInfo(QDialog):
 
   def closeEvent(self, event):
     pass
+
 
 # =============================================================================
 #
@@ -303,6 +302,7 @@ def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
   msgbox.setInformativeText(message)
   msgbox.exec()
 
+
 # =============================================================================
 #
 #  #    #   ####    #####   #   #  ######   #####
@@ -340,6 +340,7 @@ def InfoNotYet(message=None):
   if message is None:
     message = "Not Yet Implemented"
   InfoMessageDialog("Not Yet Implemented", message, 'info')
+
 
 # =============================================================================
 #

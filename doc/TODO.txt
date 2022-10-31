@@ -15,7 +15,9 @@ TO DO
 * Link manager from images
   - Dialogue de configuration OK
   - display pixel value OK
-  - TODO - management of scroll bars on the linked image
+  - TODO
+    - management of scroll bars on the linked image
+    - change slice on 3D images
 
 * Close - destroy GUI - from menu
   - OK
