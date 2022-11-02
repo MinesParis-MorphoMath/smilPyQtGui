@@ -860,8 +860,9 @@ class smilHistogram(QDialog):
 #   ####   ######     #      #    #  #    #  #    #  ######
 #
 class smilGetImageName(QDialog):
-  def __init__(self):
+  def __init__(self, name=""):
     super().__init__()
+    self.oldName = name
     self.initializeUI()
 
   def initializeUI(self):
@@ -876,6 +877,7 @@ class smilGetImageName(QDialog):
     label.setText("Enter a new name for this image...")
 
     self.name_edit = QLineEdit()
+    self.name_edit.setText(self.oldName)
 
     cancel_button = QPushButton("Cancel", self)
     cancel_button.move(140, 90)

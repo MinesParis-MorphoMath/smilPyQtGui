@@ -592,7 +592,7 @@ class smilQtView(QMainWindow):
     return
 
   def fn_setname(self):
-    newName = spqd.smilGetImageName().getName()
+    newName = spqd.smilGetImageName(self.imName).getName()
     if not newName is None and newName != '':
       self.image.setName(newName)
       self.imName = newName
