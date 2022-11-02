@@ -50,17 +50,12 @@ TO DO
 * Histogramme
   - make histogram map from image, OK
   - still drawing with qwt to do
+  -OK
 
 * Labeled images
   - OK
 
 * Set image name
   - OK
-
-
-
-
-
-
 
 * Finally... clean-up code

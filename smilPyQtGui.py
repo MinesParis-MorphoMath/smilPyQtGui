@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  smilPyQtTools.py
+#  smilPyQtGui.py
 #
 #  Copyright 2022 José Marcio Martins da Cruz <martins@jose-marcio.org>
 #
@@ -52,7 +52,6 @@ from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
 
 from smilPyQtDlog import *
 
-
 # =============================================================================
 #
 
@@ -62,17 +61,17 @@ class smilGui:
 
   def __init__(self, argv=[]):
     self.app = QApplication(argv)
-    self.views = {}
+    #self.views = {}
 
-  def _nextUuid():
+  def nextUuid():
     smilGui.last += 1
     uuid = '{:d}'.format(smilGui.last)
     return uuid
 
-  def addView(self, view):
-    uuid = smilGui._nextUuid()
-    #view = smilQtView(image, uuid)
+  def register(self, view):
+    uuid = smilGui.nextUuid()
     smilGui.views[uuid] = view
+    return uuid
 
   def _getViewByImage(self, image):
     for uuid in smilGui.views.keys():
@@ -80,18 +79,26 @@ class smilGui:
         return uuid
     return None
 
-  def closeView(self, key=None):
+  def unregister(self, key=None):
     if key is None:
       return
 
-    if not isinstance(key, 'str'):
+    if not isinstance(key, str):
       uuid = _getViewByImage(key)
     else:
       uuid = key
 
-    if uuid in self.views.keys():
-      smilGui.views[uuid].close()
+    if uuid in smilGui.views.keys():
       del smilGui.views[uuid]
+
+  def isRegistered(self, uuid):
+    return uuid in smilGui.views.keys()
+
+  def getCopy(self):
+    res = {}
+    for k in smilGui.views.keys():
+      res[k] = smilGui.views[k]
+    return res
 
   def hideView(self, uuid=None):
     if uuid in smilGui.views.keys():
@@ -114,7 +121,7 @@ class smilGui:
     dAll = smilGui.views
     for k in dAll.keys():
       dTmp[k] = dAll[k]
-    w = ListImagesDialog(dTmp).run()
+    w = ViewManagerDialog(dTmp).run()
 
   def listViews(self):
     for k in smilGui.views.keys():

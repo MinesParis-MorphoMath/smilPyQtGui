@@ -77,8 +77,6 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QGridLayout
 
 from PyQt5 import Qwt
 
-import smilPyQtTools as spqt
-
 # -----------------------------------------------------------------------------
 #
 #
@@ -286,7 +284,7 @@ def ShowMessage(title=None, message=None, level='', tStyle='h4', mStyle=None):
     return txt
 
   msgbox = QMessageBox()
-  msgbox.setMinimumSize(250, 100)
+  msgbox.setMinimumSize(400, 100)
   level = level.lower()
   if level == 'info':
     msgbox.setIcon(msgbox.Information)
@@ -341,6 +339,74 @@ def InfoNotYet(message=None):
     message = "Not Yet Implemented"
   InfoMessageDialog("Not Yet Implemented", message, 'info')
 
+# =============================================================================
+#
+#    ##    #####    ####   #    #   #####
+#   #  #   #    #  #    #  #    #     #
+#  #    #  #####   #    #  #    #     #
+#  ######  #    #  #    #  #    #     #
+#  #    #  #    #  #    #  #    #     #
+#  #    #  #####    ####    ####      #
+#
+#
+class InfoDialog(QDialog):
+  def __init__(self, title='', message=None, icon=None, align=Qt.AlignLeft):
+    super().__init__()
+    self.title = title
+    if isinstance(message, list):
+      self.message = '\n'.join(message)
+    else:
+      self.message = message
+    self.icon = icon
+    self.align = align
+
+    self.initializeUI()
+
+  def initializeUI(self):
+    self.setMinimumSize(384, 100)
+    self.setWindowTitle(self.title)
+
+    self.setUpMainWindow()
+    self.show()
+
+  def setUpMainWindow(self):
+    label = QLabel()
+    label.setText(self.title)
+    label.setAlignment(Qt.AlignCenter)
+
+    message = QLabel()
+    message.setText(self.message)
+    message.setAlignment(self.align)
+    #message.setStyleSheet("border : 1px solid black;")
+    message.setWordWrap(True)
+
+    all_layout = QVBoxLayout()
+    all_layout.addWidget(label)
+    all_layout.addWidget(message)
+
+    ok_button = QPushButton("OK")
+    ok_button.clicked.connect(self.ok)
+
+    buttons_layout = QHBoxLayout()
+    buttons_layout.addStretch()
+    buttons_layout.addWidget(ok_button)
+
+    tout = QVBoxLayout()
+    tout.addLayout(all_layout)
+    tout.addStretch()
+    tout.addLayout(buttons_layout)
+
+    self.setLayout(tout)
+
+  def ok(self):
+    self.close()
+
+  def run(self):
+    self.exec()
+
+def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
+  idlog = InfoDialog(title, message, align=align)
+  idlog.run()
 
 # =============================================================================
 #
@@ -552,7 +618,7 @@ class XMItem(QListWidgetItem):
     return '{:5s} {:s}'.format(self.key, self.data.imName)
 
 
-class ListImagesDialog(QDialog):
+class ViewManagerDialog(QDialog):
   def __init__(self, All={}):
     super().__init__()
     self.All = All
@@ -593,6 +659,8 @@ class ListImagesDialog(QDialog):
     list_layout.addLayout(all_layout)
     hide_button = QPushButton("Hide")
     hide_button.clicked.connect(self.hide)
+    hideall_button = QPushButton("Hide All")
+    hideall_button.clicked.connect(self.hideall)
     show_button = QPushButton("Show")
     show_button.clicked.connect(self.show)
     showall_button = QPushButton("Show all")
@@ -603,6 +671,7 @@ class ListImagesDialog(QDialog):
     buttons_layout = QHBoxLayout()
     buttons_layout.addStretch()
     buttons_layout.addWidget(hide_button)
+    buttons_layout.addWidget(hideall_button)
     buttons_layout.addWidget(show_button)
     buttons_layout.addWidget(showall_button)
     buttons_layout.addWidget(accept_button)
@@ -627,6 +696,16 @@ class ListImagesDialog(QDialog):
     item = self.list_all.currentItem()
     data = item.data.data
     data.hide()
+    self.redrawList()
+
+  def hideall(self):
+    #print("Entering show all")
+    for row in range(0, self.list_all.count()):
+      #print("  handling row {:d}".format(row))
+      item = self.list_all.item(row)
+      data = item.data.data
+      #print("  image name : {:s}".format(item.data.data.imName))
+      data.hide()
     self.redrawList()
 
   def show(self):

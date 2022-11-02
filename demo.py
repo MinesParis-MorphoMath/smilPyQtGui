@@ -1,30 +1,14 @@
 
 import os
 import sys
-import inspect
-
-import uuid
-
-#import glob
-#import psutil
-
-#import fnmatch as fn
-import re
-import datetime
-import time
 
 import argparse as ap
-
-import math as m
-import numpy as np
 
 import smilPython as sp
 
 from smilPyQtView import *
 
-import smilPyQtTools as spqt
-
-
+#from smilPyQtGui import *
 
 # -----------------------------------------------------------------------------
 #
@@ -38,9 +22,6 @@ def getCliArgs():
 
   parser.add_argument('--debug', help='', action="store_true")
   parser.add_argument('--verbose', help='', action="store_true")
-
-  #parser.add_argument('--int', default=None, help='PID to monitor', type=int)
-  #parser.add_argument('--str', default="String", help='A string', type=str)
 
   cli = parser.parse_args()
 
@@ -83,7 +64,6 @@ def initImages():
         im.setPixel(i + f, xmax + i - f, z, 255)
         im.setPixel(xmax + i - f, 255 - i - f, z, 255)
     sp.dilate(im, im)
-
 
   images = []
 
@@ -130,6 +110,12 @@ def initImages():
     im.setName("im 3D 256x256x64")
     images.append(im)
 
+    im2 = sp.Image(im)
+    sp.dilate(im, im2, sp.Cross3DSE(2))
+    im2.setName("im 3D half")
+    sp.div(im2, 2, im2)
+    images.append(im2)
+
   files = [
     "images/astronaut-bw.png", "images/distances.png", "images/eutectic.png",
     "images/eutectic-label.png"
@@ -151,26 +137,14 @@ def main(cli, args=None):
 
   images = initImages()
 
-  app = QApplication(sys.argv)
-
   views = []
   for im in images:
     view = smilQtView(im)
     views.append(view)
 
-  print()
+  smGui.viewManager()
 
-  spqt.SRegister.print()
-
-  #spqt.SRegister.hideAll()
-  #time.sleep(10)
-  #spqt.SRegister.showAll()
-
-  if True:
-    r = input("Type any key to quit")
-    return r
-  else:
-    return app.exec_()
+  r = input("Hit any key to quit")
 
 
 # =============================================================================

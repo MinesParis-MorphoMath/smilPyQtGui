@@ -69,8 +69,8 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
 import smilPyQtDlog as spqd
-import smilPyQtTools as spqt
-from smilPyQtGui import smilGui
+
+from smilPyQtGui import *
 
 # -----------------------------------------------------------------------------
 #
@@ -243,13 +243,16 @@ class smilGraphicsView(QGraphicsView):
 #  #    #  #    #     #    #    #
 #
 class smilQtView(QMainWindow):
-  def __init__(self, img=None, label=False, name=None, uuid=None):
+  def __init__(self, img=None, name=None):
     super().__init__()
 
-    if not uuid is None:
-      self.uuid = spqt.SRegister.register(self)
+    if img is None:
+      return
 
-    self.uuid = spqt.SRegister.register(self)
+    uuid = smGui.register(self)
+    if uuid is None:
+      uuid = str(uuid)
+    self.uuid = uuid
 
     self.initializeMembers()
     self.initializeUI()
@@ -373,6 +376,7 @@ class smilQtView(QMainWindow):
     help_menu.addAction(self.help_act)
     help_menu.addSeparator()
     help_menu.addAction(self.about_act)
+    help_menu.addAction(self.aboutqt_act)
 
   def createActions(self):
     """Create the application's menu actions."""
@@ -380,9 +384,9 @@ class smilQtView(QMainWindow):
     #
     # File menu
     #
-    self.list_act = QAction(QIcon("images/open_file.png"), "Show/Hide Images")
+    self.list_act = QAction(QIcon("images/open_file.png"), "Views manager")
     #self.list_act.setShortcut("Ctrl+S")
-    self.list_act.setStatusTip("List images")
+    self.list_act.setStatusTip("Views manager")
     self.list_act.triggered.connect(self.fn_list)
 
     self.setName_act = QAction(QIcon("images/save_file.png"), "Set image name")
@@ -469,9 +473,13 @@ class smilQtView(QMainWindow):
     self.help_act.setStatusTip("Help")
     self.help_act.triggered.connect(self.fn_help)
 
-    self.about_act = QAction("About")
+    self.about_act = QAction("About smilPyQtGui")
     self.about_act.setStatusTip("About smilPyQtGui")
     self.about_act.triggered.connect(self.fn_about)
+
+    self.aboutqt_act = QAction("About Qt")
+    self.aboutqt_act.setStatusTip("About Qt")
+    self.aboutqt_act.triggered.connect(self.fn_aboutqt)
 
   #
   #
@@ -553,11 +561,11 @@ class smilQtView(QMainWindow):
     for k in self.linkedImages.keys():
       view = self.linkedImages[k]
       uuid = view.uuid
-      if not spqt.SRegister.isRegistered(uuid):
+      if not smGui.isRegistered(uuid):
         del self.linkedImages[k]
-      view.updateViwHintFromOther(x, y)
+      view.updateViewHintFromOther(x, y)
 
-  def updateViwHintFromOther(self, x, y):
+  def updateViewHintFromOther(self, x, y):
     s = []
     s.append("Scale : {:5.1f} %".format(100 * self.scaleValue))
     if self.d > 1:
@@ -571,15 +579,17 @@ class smilQtView(QMainWindow):
     sOut = " - ".join(s)
     self.lbl1.setText(sOut)
 
+  def updateSliderFromOther(self, sliderValue):
+    self.slider.setSliderPosition(sliderValue)
+    self.curSlice = sliderValue
+    self.update(sliderChanged=True)
+
   #
   # I M A G E   M E N U
   #
   def fn_list(self):
-    dictAll = spqt.SRegister.list()
-    dictTmp = {}
-    for k in dictAll.keys():
-      dictTmp[k] = dictAll[k]
-    w = spqd.ListImagesDialog(dictTmp).run()
+    smGui.viewManager()
+    return
 
   def fn_setname(self):
     newName = spqd.smilGetImageName().getName()
@@ -601,10 +611,8 @@ class smilQtView(QMainWindow):
     self.hide()
 
   def fn_close(self):
-    spqt.SRegister.unregister(self.uuid)
+    smGui.unregister(self.uuid)
     self.close()
-    if debug:
-      spqt.SRegister.print()
 
   #
   #
@@ -639,7 +647,8 @@ class smilQtView(QMainWindow):
   #  T O O L S   M E N U
   #
   def fn_link(self):
-    dictAll = spqt.SRegister.list()
+    #dictAll = spqt.SRegister.list()
+    dictAll = smGui.getCopy()
     dictLnk = self.linkedImages
     dictTmp = {}
     for k in dictAll.keys():
@@ -680,11 +689,11 @@ class smilQtView(QMainWindow):
       ['Allocated', '{:} bytes'.format(self.image.getAllocatedSize())])
 
     infos.append(['Binary image', '{:}'.format(sp.isBinary(self.image))])
-    infos.append(['Values count', '{:d}'.format(len(sp.valueList(self.image, False)))])
+    infos.append(
+      ['Values count', '{:d}'.format(len(sp.valueList(self.image, False)))])
     infos.append(['Min / Max', '{:d} / {:d}'.format(Min, Max)])
     infos.append(['Median', '{:d}'.format(median)])
     infos.append(['Mean / StdDev', '{:.2f} / {:.2f}'.format(mean, stdev)])
-
 
     title = 'Image information '
     label = '<h4>' + self.imName + '</h4>'
@@ -697,16 +706,26 @@ class smilQtView(QMainWindow):
     spqd.HelpDialog().run()
 
   def fn_about(self):
-    title = '<h2>' + 'smilPyQtGui' + '</h2>' + '<h2>' + 'v0.1' + '</h2>'
+    title = '<h2><center>' + 'smilPyQtGui - v0.1' + '</center></h2>'
 
     message = [
-      'PyQt Graphical Interface for Smil Library', '',
-      'CMM - Centre de Morphologie Mathematique',
-      'Jose-Marcio Martins da Cruz', 'Jose-Marcio.Martins@minesparis.psl.eu',
-      '', 'https://github.com/MinesParis-MorphoMath/smilPyQtGui>github',
-      'https://github.com/MinesParis-MorphoMath/smil'
+      'PyQt Graphical Interface for Smil Library', '<p>',
+      'CMM - Centre de Morphologie Mathematique', '<p>',
+      'Jose-Marcio Martins da Cruz', '<p>',
+      'Jose-Marcio.Martins@minesparis.psl.eu', '<p>',
+      'https://github.com/MinesParis-MorphoMath/'
     ]
+    message = [
+      'PyQt Graphical Interface for Smil Library', '',
+      'CMM - Centre de Morphologie Mathematique', '',
+      'Jose-Marcio Martins da Cruz', 'Jose-Marcio.Martins@minesparis.psl.eu',
+      '', 'https://github.com/MinesParis-MorphoMath/'
+    ]
+    #spqd.ShowMessage(title, '\n'.join(message), mStyle='center')
     spqd.ShowInfoDialog(title, message, Qt.AlignCenter)
+
+  def fn_aboutqt(self):
+    smGui.app.aboutQt()
 
   #
   #
@@ -720,10 +739,15 @@ class smilQtView(QMainWindow):
       print('Slider - new value : {:d}'.format(arg))
     self.curSlice = arg
     self.update(sliderChanged=True)
+    for k in self.linkedImages.keys():
+      view = self.linkedImages[k]
+      uuid = view.uuid
+      if not smGui.isRegistered(uuid):
+        del self.linkedImages[k]
+      view.updateSliderFromOther(arg)
 
   def closeEvent(self, event):
-    spqt.SRegister.unregister(self.uuid)
-    spqt.SRegister.print()
+    smGui.unregister(self.uuid)
     event.accept()
 
   def printImage(self):
