@@ -135,11 +135,9 @@ def initImages():
 #
 def main(cli, args=None):
 
-  images = initImages()
-
-  views = []
-  for im in images:
-    smilQtView(im)
+  sz = 16000
+  im = sp.Image(sz, sz)
+  smilQtView(im)
     #view = smilQtView(im)
     #views.append(view)
 

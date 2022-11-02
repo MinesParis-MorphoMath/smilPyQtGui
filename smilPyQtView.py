@@ -730,6 +730,18 @@ class smilQtView(QMainWindow):
   #
   #
   #
+  def updateFromLinker(self, point=None, sliderValue=None, zoom=None):
+    #
+    if not point is None:
+      pass
+    #
+    if not sliderValue is None:
+      self.slider.setSliderPosition(sliderValue)
+      self.curSlice = sliderValue
+      self.update(sliderChanged=True)
+    #
+    if not zoom is None:
+      pass
 
   #
   #
