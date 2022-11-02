@@ -558,31 +558,7 @@ class smilQtView(QMainWindow):
     self.lbl1.setText(sOut)
 
     # update linked images
-    for k in self.linkedImages.keys():
-      view = self.linkedImages[k]
-      uuid = view.uuid
-      if not smGui.isRegistered(uuid):
-        del self.linkedImages[k]
-      view.updateViewHintFromOther(x, y)
-
-  def updateViewHintFromOther(self, x, y):
-    s = []
-    s.append("Scale : {:5.1f} %".format(100 * self.scaleValue))
-    if self.d > 1:
-      s.append("Slice : {:d}".format(self.curSlice))
-
-    if self.isInImage(x, y):
-      v = self.image.getPixel(x, y, self.curSlice)
-      s.append("Mouse : ({:4d}, {:4d})".format(x, y))
-      s.append("Pixel value : {}".format(v))
-
-    sOut = " - ".join(s)
-    self.lbl1.setText(sOut)
-
-  def updateSliderFromOther(self, sliderValue):
-    self.slider.setSliderPosition(sliderValue)
-    self.curSlice = sliderValue
-    self.update(sliderChanged=True)
+    self.updateToLinked(point=QPoint(x, y))
 
   #
   # I M A G E   M E N U
@@ -620,28 +596,29 @@ class smilQtView(QMainWindow):
   #
   def fn_zoomIn(self):
     fInc = 1.25
-    s = self.scaleValue * fInc
-    if s < self.scaleMax:
+    scale = self.scaleValue * fInc
+    if scale < self.scaleMax:
       self.update(factor=1.25)
+      self.updateToLinked(newScale=scale)
 
   def fn_zoomOut(self):
     fDec = 0.8
-    s = self.scaleValue * fDec
-    if s * self.scaleMax > 1.:
+    scale = self.scaleValue * fDec
+    if scale * self.scaleMax > 1.:
       self.update(factor=0.8)
+      self.updateToLinked(newScale=scale)
 
   def fn_zoomReset(self):
     self.update(factor=0.)
+    self.updateToLinked(newScale=1.)
 
   def fn_label(self):
     self.smScene.showLabel = not self.smScene.showLabel
     self.update(colorTableChanged=True)
-    pass
 
   def fn_magnify(self):
     print(inspect.stack()[0][3])
     spqd.InfoNotYet()
-    pass
 
   #
   #  T O O L S   M E N U
@@ -730,18 +707,43 @@ class smilQtView(QMainWindow):
   #
   #
   #
-  def updateFromLinker(self, point=None, sliderValue=None, zoom=None):
+  def updateToLinked(self, point=None, sliderValue=None, newScale=None):
+    for k in self.linkedImages.keys():
+      view = self.linkedImages[k]
+      uuid = view.uuid
+      if not smGui.isRegistered(uuid):
+        del self.linkedImages[k]
+      view.updateFromLinker(point=point,
+                            sliderValue=sliderValue,
+                            newScale=newScale)
+
+  def updateFromLinker(self, point=None, sliderValue=None, newScale=None):
     #
     if not point is None:
-      pass
+      x = point.x()
+      y = point.y()
+
+      s = []
+      s.append("Scale : {:5.1f} %".format(100 * self.scaleValue))
+      if self.d > 1:
+        s.append("Slice : {:d}".format(self.curSlice))
+
+      if self.isInImage(x, y):
+        v = self.image.getPixel(x, y, self.curSlice)
+        s.append("Mouse : ({:4d}, {:4d})".format(x, y))
+        s.append("Pixel value : {}".format(v))
+
+      sOut = " - ".join(s)
+      self.lbl1.setText(sOut)
     #
     if not sliderValue is None:
       self.slider.setSliderPosition(sliderValue)
       self.curSlice = sliderValue
       self.update(sliderChanged=True)
     #
-    if not zoom is None:
-      pass
+    if not newScale is None:
+      factor = newScale / self.scaleValue
+      self.update(factor=factor)
 
   #
   #
@@ -751,12 +753,7 @@ class smilQtView(QMainWindow):
       print('Slider - new value : {:d}'.format(arg))
     self.curSlice = arg
     self.update(sliderChanged=True)
-    for k in self.linkedImages.keys():
-      view = self.linkedImages[k]
-      uuid = view.uuid
-      if not smGui.isRegistered(uuid):
-        del self.linkedImages[k]
-      view.updateSliderFromOther(arg)
+    self.updateToLinked(sliderValue=arg)
 
   def closeEvent(self, event):
     smGui.unregister(self.uuid)
