@@ -529,8 +529,6 @@ class smilQtView(QMainWindow):
   #
   def update(self, factor=1., sliderChanged=False, colorTableChanged=False):
     self.smScene.update(factor, sliderChanged, colorTableChanged)
-    #self.resize(self.w * self.scale + 20, self.h * self.scale + 80)
-
     self.updateHint()
     return
 
@@ -827,6 +825,12 @@ class smilQtView(QMainWindow):
       pass
 
   #
+  #  ######  #    #  ######  #    #   #####   ####
+  #  #       #    #  #       ##   #     #    #
+  #  #####   #    #  #####   # #  #     #     ####
+  #  #       #    #  #       #  # #     #         #
+  #  #        #  #   #       #   ##     #    #    #
+  #  ######    ##    ######  #    #     #     ####
   #
   #
   def sliderValueChanged(self, arg):
@@ -834,8 +838,8 @@ class smilQtView(QMainWindow):
       print('Slider - new value : {:d}'.format(arg))
     self.curSlice = arg
     self.update(sliderChanged=True)
-    #self.updateToLinked(sliderValue=arg)
-    self.updateToLinked(sliderValue=True)
+    self.updateToLinked(sliderValue=arg)
+    #self.updateToLinked(sliderValue=True)
 
   def closeEvent(self, event):
     gSmilGui.unregister(self.uuid)
@@ -844,20 +848,6 @@ class smilQtView(QMainWindow):
   def resizeEvent(self, event):
     size = event.size()
     self.updateToLinked(size=size)
-
-  def saveImage(self):
-    """Display QFileDialog to select image location and
-      save the image."""
-    image_file, _ = QFileDialog.getSaveFileName(
-      self, "Save Image", "", "JPG Files (*.jpeg *.jpg );;PNG Files (*.png);;\
-              Bitmap Files (*.bmp);;GIF Files (*.gif)")
-
-    pixmap = self.smScene.qPixmap
-    if image_file and pixmap.isNull() == False:
-      pixmap.save(image_file)
-    else:
-      QMessageBox.information(self, "Not Saved", "Image not saved.",
-                              QMessageBox.StandardButton.Ok)
 
 
 # =============================================================================
