@@ -238,7 +238,7 @@ class smilGraphicsView(QGraphicsView):
   def mouseMoveEvent(self, event):
     parent = self.parent
     parent.mousePosition = event.pos()
-    parent.updateViewHint()
+    parent.updateHint()
 
 
 # =============================================================================
@@ -531,7 +531,7 @@ class smilQtView(QMainWindow):
     self.smScene.update(factor, sliderChanged, colorTableChanged)
     #self.resize(self.w * self.scale + 20, self.h * self.scale + 80)
 
-    self.updateViewHint()
+    self.updateHint()
     return
 
   #
@@ -544,7 +544,7 @@ class smilQtView(QMainWindow):
       return False
     return True
 
-  def updateViewHint(self):
+  def updateHint(self):
     dx, dy = self.smScene.getScrollValues()
     x = int(self.mousePosition.x() + dx)
     y = int(self.mousePosition.y() + dy)
@@ -569,6 +569,13 @@ class smilQtView(QMainWindow):
     self.updateToLinked(point=QPoint(x, y))
 
   #
+  #  #    #  ######  #    #  #    #
+  #  ##  ##  #       ##   #  #    #
+  #  # ## #  #####   # #  #  #    #
+  #  #    #  #       #  # #  #    #
+  #  #    #  #       #   ##  #    #
+  #  #    #  ######  #    #   ####
+  #
   # I M A G E   M E N U
   #
   def fn_list(self):
@@ -586,10 +593,38 @@ class smilQtView(QMainWindow):
     self.setupImage(self.image)
 
   def fn_save(self):
-    self.saveImage()
+    image_file, _ = QFileDialog.getSaveFileName(
+      self, "Save Image", "", "JPG Files (*.jpeg *.jpg );;PNG Files (*.png);;\
+              Bitmap Files (*.bmp);;GIF Files (*.gif)")
+
+    pixmap = self.smScene.qPixmap
+    if image_file and pixmap.isNull() == False:
+      pixmap.save(image_file)
+    else:
+      QMessageBox.information(self, "Not Saved", "Image not saved.",
+                              QMessageBox.StandardButton.Ok)
 
   def fn_print(self):
-    self.printImage()
+    printer = QPrinter()
+    # Configure the printer
+    print_dialog = QPrintDialog(printer)
+    if print_dialog.exec() == QDialog.DialogCode.Accepted:
+      # Use QPainter to output a PDF file
+      painter = QPainter()
+      painter.begin(printer)
+      # Create QRect object to hold the painter's current
+      # viewport, which is the image_label
+      rect = QRect(painter.viewport())
+      # Get the size of image_label and use it to set the size
+      # of the viewport
+      pixmap = self.smScene.qPixmap
+      size = QSize(pixmap.size())
+      size.scale(rect.size(), Qt.AspectRatioMode.KeepAspectRatio)
+      painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
+      painter.setWindow(pixmap.rect())
+      # Scale the image_label to fit the rect source (0, 0)
+      painter.drawPixmap(0, 0, pixmap)
+      painter.end()
 
   def fn_hide(self):
     self.hide()
@@ -713,6 +748,12 @@ class smilQtView(QMainWindow):
     gSmilGui.app.aboutQt()
 
   #
+  #  #          #    #    #  #    #
+  #  #          #    ##   #  #   #
+  #  #          #    # #  #  ####
+  #  #          #    #  # #  #  #
+  #  #          #    #   ##  #   #
+  #  ######     #    #    #  #    #
   #
   #
   def updateToLinked(self,
@@ -800,29 +841,9 @@ class smilQtView(QMainWindow):
     gSmilGui.unregister(self.uuid)
     event.accept()
 
-  def printImage(self):
-    """Print image and use QPrinter to select the
-    native system format for the printer dialog."""
-    printer = QPrinter()
-    # Configure the printer
-    print_dialog = QPrintDialog(printer)
-    if print_dialog.exec() == QDialog.DialogCode.Accepted:
-      # Use QPainter to output a PDF file
-      painter = QPainter()
-      painter.begin(printer)
-      # Create QRect object to hold the painter's current
-      # viewport, which is the image_label
-      rect = QRect(painter.viewport())
-      # Get the size of image_label and use it to set the size
-      # of the viewport
-      pixmap = self.smScene.qPixmap
-      size = QSize(pixmap.size())
-      size.scale(rect.size(), Qt.AspectRatioMode.KeepAspectRatio)
-      painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
-      painter.setWindow(pixmap.rect())
-      # Scale the image_label to fit the rect source (0, 0)
-      painter.drawPixmap(0, 0, pixmap)
-      painter.end()
+  def resizeEvent(self, event):
+    size = event.size()
+    self.updateToLinked(size=size)
 
   def saveImage(self):
     """Display QFileDialog to select image location and
