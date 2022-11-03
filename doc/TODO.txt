@@ -18,6 +18,7 @@ TO DO
   - TODO
     - management of scroll bars on the linked image
     - change slice on 3D images
+    - both OK
 
 * Close - destroy GUI - from menu
   - OK
@@ -27,7 +28,7 @@ TO DO
 * Overlays ???
 
 * Help modal dialog
-  - Created - need to add text
+  - Created - need to add text - the last thing to do
 
 * About modal dialog
   - OK
@@ -58,4 +59,15 @@ TO DO
 * Set image name
   - OK
 
+* zoom of scaled views
+    OK
+
+* set same window size of linked images
+  needed to synchronize scrollBars
+
 * Finally... clean-up code
+
+* Code can be improved
+  - use Signals whenever possible ?
+  - rearrange code smilPyQtGui may be the parent class of everything
+

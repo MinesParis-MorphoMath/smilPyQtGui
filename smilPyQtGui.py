@@ -55,7 +55,7 @@ from smilPyQtDlog import *
 # =============================================================================
 #
 
-class smilGui:
+class SmilGui:
   last = 0
   views = {}
 
@@ -64,18 +64,18 @@ class smilGui:
     #self.views = {}
 
   def nextUuid():
-    smilGui.last += 1
-    uuid = '{:d}'.format(smilGui.last)
+    SmilGui.last += 1
+    uuid = '{:d}'.format(SmilGui.last)
     return uuid
 
   def register(self, view):
-    uuid = smilGui.nextUuid()
-    smilGui.views[uuid] = view
+    uuid = SmilGui.nextUuid()
+    SmilGui.views[uuid] = view
     return uuid
 
   def _getViewByImage(self, image):
-    for uuid in smilGui.views.keys():
-      if smilGui.views[uuid] == image:
+    for uuid in SmilGui.views.keys():
+      if SmilGui.views[uuid] == image:
         return uuid
     return None
 
@@ -88,66 +88,66 @@ class smilGui:
     else:
       uuid = key
 
-    if uuid in smilGui.views.keys():
-      del smilGui.views[uuid]
+    if uuid in SmilGui.views.keys():
+      del SmilGui.views[uuid]
 
   def isRegistered(self, uuid):
-    return uuid in smilGui.views.keys()
+    return uuid in SmilGui.views.keys()
 
   def getCopy(self):
     res = {}
-    for k in smilGui.views.keys():
-      res[k] = smilGui.views[k]
+    for k in SmilGui.views.keys():
+      res[k] = SmilGui.views[k]
     return res
 
   def hideView(self, uuid=None):
-    if uuid in smilGui.views.keys():
-      smilGui.views[uuid].hide()
+    if uuid in SmilGui.views.keys():
+      SmilGui.views[uuid].hide()
 
   def hideAll(self):
     for uuid in self.views.keys():
       self.hideView(uuid)
 
   def showView(self, uuid=None):
-    if uuid in smilGui.views.keys():
-      smilGui.views[uuid].show()
+    if uuid in SmilGui.views.keys():
+      SmilGui.views[uuid].show()
 
   def showAll(self):
-    for uuid in smilGui.views.keys():
+    for uuid in SmilGui.views.keys():
       self.showView(uuid)
 
   def viewManager(self):
     dTmp = {}
-    dAll = smilGui.views
+    dAll = SmilGui.views
     for k in dAll.keys():
       dTmp[k] = dAll[k]
     w = ViewManagerDialog(dTmp).run()
 
   def listViews(self):
-    for k in smilGui.views.keys():
-      print("{:} {:}".format(k, smilGui.views[k]))
+    for k in SmilGui.views.keys():
+      print("{:} {:}".format(k, SmilGui.views[k]))
 
     pass
 
 
-smGui = smilGui()
+gSmilGui = SmilGui()
 
 
 # =============================================================================
 #
 if __name__ == '__main__':
 
-  print(smilGui.last)
-  print(smGui.last)
+  print(SmilGui.last)
+  print(gSmilGui.last)
   w = QDialog()
   w.imName = "1"
-  smGui.addView(w)
-  print(smGui.last)
+  gSmilGui.addView(w)
+  print(gSmilGui.last)
 
   w = QDialog()
   w.imName = "2"
-  smGui.addView(w)
-  print(smGui.last)
+  gSmilGui.addView(w)
+  print(gSmilGui.last)
 
-  smGui.listViews()
-  smGui.viewManager()
+  gSmilGui.listViews()
+  gSmilGui.viewManager()

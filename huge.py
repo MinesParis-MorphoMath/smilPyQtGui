@@ -143,7 +143,7 @@ def main(cli, args=None):
     #view = smilQtView(im)
     #views.append(view)
 
-  #smGui.viewManager()
+  #gSmilGui.viewManager()
 
   r = input("Hit any key to quit")
 

@@ -349,8 +349,8 @@ def InfoNotYet(message=None):
 #  #    #  #####    ####    ####      #
 #
 #
-class InfoDialog(QDialog):
-  def __init__(self, title='', message=None, icon=None, align=Qt.AlignLeft):
+class AboutDialog(QDialog):
+  def __init__(self, title='', message='', icon=None, align=Qt.AlignCenter):
     super().__init__()
     self.title = title
     if isinstance(message, list):
@@ -404,8 +404,8 @@ class InfoDialog(QDialog):
   def run(self):
     self.exec()
 
-def ShowInfoDialog(title='', message='', align=Qt.AlignCenter):
-  idlog = InfoDialog(title, message, align=align)
+def ShowAboutDialog(title='', message='', align=Qt.AlignCenter):
+  idlog = AboutDialog(title, message, align=align)
   idlog.run()
 
 # =============================================================================
