@@ -316,6 +316,10 @@ class smilQtView(QMainWindow):
     self.lbl1 = QLabel()
     self.lbl1.setText("Label 1")
 
+    self.lbl2 = QLabel()
+    self.lbl2.setText("Slice")
+    self.lbl2.setVisible(False)
+
     self.slider = QSlider()
     self.slider.setOrientation(Qt.Horizontal)
     self.slider.setMinimum(0)
@@ -324,11 +328,16 @@ class smilQtView(QMainWindow):
     self.slider.valueChanged[int].connect(self.sliderValueChanged)
     self.slider.setVisible(False)
 
+    hbox = QHBoxLayout()
+    hbox.addWidget(self.lbl2)
+    hbox.addWidget(self.slider)
+
     self.smScene = smilGraphicsView(self)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.lbl1)
-    vbox.addWidget(self.slider)
+    vbox.addLayout(hbox)
+    #vbox.addWidget(self.slider)
     vbox.addWidget(self.smScene)
 
     tout = QWidget()
@@ -519,6 +528,7 @@ class smilQtView(QMainWindow):
     self.slider.setMaximum(self.d - 1)
     if self.d > 1:
       self.slider.setVisible(True)
+      self.lbl2.setVisible(True)
 
     self.smScene.setImage()
     self.update()
