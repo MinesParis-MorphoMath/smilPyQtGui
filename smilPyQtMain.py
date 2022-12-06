@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  smilPyQtGui.py
+#  smilPyQtMain.py
 #
 #  Copyright 2022 José Marcio Martins da Cruz <martins@jose-marcio.org>
 #
@@ -31,123 +31,132 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+#
+
+#
 # This script does...
 #
 # History : xx/xx/xxxx - Jose-Marcio Martins da Cruz
 #           Just created
 #
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QSize
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
+import os
+import sys
 
-from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
-                             QMainWindow, QMenu, QAction, qApp, QFileDialog,
-                             QInputDialog, QStatusBar, QTextEdit, QWidget,
-                             QDialog, QGraphicsView, QGraphicsScene, QSlider,
-                             QLineEdit)
+#import glob
+#import psutil
 
-from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon, QColor, qRgb
+#import fnmatch as fn
+import re
+import datetime
 
-from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
+import math as m
+import numpy as np
 
+
+import smilPython as sp
+
+from smilPyQtView import *
 from smilPyQtDlog import *
 
 # =============================================================================
 #
-
-class SmilGui:
+#
+class smilGui:
   last = 0
   views = {}
 
   def __init__(self, argv=[]):
     self.app = QApplication(argv)
-    #self.views = {}
 
-  def nextUuid():
-    SmilGui.last += 1
-    uuid = '{:d}'.format(SmilGui.last)
-    return uuid
+  def imShow(self, img = None):
+    if img is None:
+      return None
 
-  def register(self, view):
-    uuid = SmilGui.nextUuid()
-    SmilGui.views[uuid] = view
-    return uuid
+    self.last += 1
+    uuid = str(self.last)
+    view = smilQtView(img, uuid = uuid)
+    view.parent = self
+    self.views[uuid] = view
 
-  def _getViewByImage(self, image):
-    for uuid in SmilGui.views.keys():
-      if SmilGui.views[uuid] == image:
-        return uuid
-    return None
+    return view
 
-  def unregister(self, key=None):
-    if key is None:
+  def imHide(self, img = None):
+    if isinstance(img, (str, int)):
+      k = str(img)
+      if k in self.views.keys():
+        self.views[k].hide()
+    for k in self.views.keys():
+      if id(self.views[k].image) == id(img):
+        self.views[k].hide()
+        break
+
+  def imHideAll(self):
+    for k in self.views.keys():
+      self.views[k].hide()
+
+  def imClose(self, img = None):
+    if isinstance(img, (str, int)):
+      k = str(img)
+      if k in self.views.keys():
+        self.views[k].close()
+      if k in self.views.keys():
+        del self.views[k]
       return
+    for k in self.views.keys():
+      if id(self.views[k].image) == id(img):
+        self.views[k].close()
+        if k in self.views.keys():
+          del self.views[k]
+        break
 
-    if not isinstance(key, str):
-      uuid = _getViewByImage(key)
-    else:
-      uuid = key
-
-    if uuid in SmilGui.views.keys():
-      del SmilGui.views[uuid]
-
-  def isRegistered(self, uuid):
-    return uuid in SmilGui.views.keys()
+  def imCloseAll(self):
+    for k in self.views.keys():
+        self.views[k].close()
+        if k in self.views.keys():
+          del self.views[k]
 
   def getCopy(self):
     res = {}
-    for k in SmilGui.views.keys():
-      res[k] = SmilGui.views[k]
+    for k in self.views.keys():
+      res[k] = self.views[k]
     return res
 
-  def hideView(self, uuid=None):
-    if uuid in SmilGui.views.keys():
-      SmilGui.views[uuid].hide()
+  def unregister(self, uuid = None):
+    if uuid in self.views.keys():
+      del self.views[uuid]
 
-  def hideAll(self):
-    for uuid in self.views.keys():
-      self.hideView(uuid)
-
-  def showView(self, uuid=None):
-    if uuid in SmilGui.views.keys():
-      SmilGui.views[uuid].show()
-
-  def showAll(self):
-    for uuid in SmilGui.views.keys():
-      self.showView(uuid)
+  def isRegistered(self, uuid):
+    return uuid in self.views.keys()
 
   def viewManager(self):
     dTmp = {}
-    dAll = SmilGui.views
+    dAll = self.views
     for k in dAll.keys():
       dTmp[k] = dAll[k]
     w = ViewManagerDialog(dTmp).run()
 
   def listViews(self):
-    for k in SmilGui.views.keys():
-      print("{:} {:}".format(k, SmilGui.views[k]))
-
-    pass
-
-
-gSmilGui = SmilGui()
-
+    for k in self.views.keys():
+      print("{:>5} - {:}".format(k, self.views[k].imName))
 
 # =============================================================================
 #
+#
+def dummy(cli):
+  return 0
+
+# =============================================================================
+#
+#
+def main(args=None):
+  return 0
+
+# =============================================================================
+#
+#
 if __name__ == '__main__':
+  import sys
 
-  print(SmilGui.last)
-  print(gSmilGui.last)
-  w = QDialog()
-  w.imName = "1"
-  gSmilGui.addView(w)
-  print(gSmilGui.last)
 
-  w = QDialog()
-  w.imName = "2"
-  gSmilGui.addView(w)
-  print(gSmilGui.last)
-
-  gSmilGui.listViews()
-  gSmilGui.viewManager()
+  sys.exit(main(sys.argv))

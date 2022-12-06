@@ -44,8 +44,6 @@ import os
 import sys
 import inspect
 
-import uuid
-
 #import glob
 #import psutil
 
@@ -68,10 +66,7 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
                              QLineEdit)
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
 
-#import smilPyQtDlog as spqd
 from smilPyQtDlog import *
-
-from smilPyQtGui import *
 
 # -----------------------------------------------------------------------------
 #
@@ -251,15 +246,12 @@ class smilGraphicsView(QGraphicsView):
 #  #    #  #    #     #    #    #
 #
 class smilQtView(QMainWindow):
-  def __init__(self, img=None, name=None):
+  def __init__(self, img=None, name=None, uuid = None):
     super().__init__()
 
     if img is None:
       return
 
-    uuid = gSmilGui.register(self)
-    if uuid is None:
-      uuid = str(uuid)
     self.uuid = uuid
 
     self.initializeMembers()
@@ -288,7 +280,7 @@ class smilQtView(QMainWindow):
     self.curSlice = 0
     self.imName = ''
 
-    self.title = '{:s} - {:s}'.format(self.uuid, self.imName)
+    self.title = '{:} - {:s}'.format(self.uuid, self.imName)
 
     self.linkedImages = {}
 
@@ -504,7 +496,7 @@ class smilQtView(QMainWindow):
   def setTitle(self, imName=None):
     if not imName is None:
       self.imName = imName
-    self.title = 'ID {:s} - {:s}'.format(self.uuid, self.imName)
+    self.title = 'ID {:} - {:s}'.format(self.uuid, self.imName)
     self.setWindowTitle(self.title)
 
   #
@@ -587,7 +579,7 @@ class smilQtView(QMainWindow):
   # I M A G E   M E N U
   #
   def fn_list(self):
-    gSmilGui.viewManager()
+    self.parent.viewManager()
     return
 
   def fn_setname(self):
@@ -638,7 +630,7 @@ class smilQtView(QMainWindow):
     self.hide()
 
   def fn_close(self):
-    gSmilGui.unregister(self.uuid)
+    self.parent.unregister(self.uuid)
     self.close()
 
   #
@@ -676,7 +668,7 @@ class smilQtView(QMainWindow):
   #
   def fn_link(self):
     #dictAll = spqt.SRegister.list()
-    dictAll = gSmilGui.getCopy()
+    dictAll = self.parent.getCopy()
     dictLnk = self.linkedImages
     dictTmp = {}
     for k in dictAll.keys():
@@ -753,7 +745,7 @@ class smilQtView(QMainWindow):
     ShowAboutDialog(title, message, Qt.AlignCenter)
 
   def fn_aboutqt(self):
-    gSmilGui.app.aboutQt()
+    self.parent.app.aboutQt()
 
   #
   #  #          #    #    #  #    #
@@ -774,7 +766,7 @@ class smilQtView(QMainWindow):
     for k in self.linkedImages.keys():
       view = self.linkedImages[k]
       uuid = view.uuid
-      if not gSmilGui.isRegistered(uuid):
+      if not self.parent.isRegistered(uuid):
         del self.linkedImages[k]
       view.updateFromLinker(point=point,
                             sliderValue=sliderValue,
@@ -852,7 +844,7 @@ class smilQtView(QMainWindow):
     #self.updateToLinked(sliderValue=True)
 
   def closeEvent(self, event):
-    gSmilGui.unregister(self.uuid)
+    self.parent.unregister(self.uuid)
     event.accept()
 
   def resizeEvent(self, event):

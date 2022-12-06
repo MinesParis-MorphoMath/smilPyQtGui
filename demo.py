@@ -6,7 +6,8 @@ import argparse as ap
 
 import smilPython as sp
 
-from smilPyQtView import *
+#from smilPyQtMain import *
+import smilPyQtMain as sg
 
 #from smilPyQtGui import *
 
@@ -137,11 +138,28 @@ def main(cli, args=None):
 
   images = initImages()
 
+  gui = sg.smilGui()
+
   views = []
   for im in images:
-    smilQtView(im)
-    #view = smilQtView(im)
-    #views.append(view)
+    gui.imShow(im)
+
+  r = input("Hit any key to continue")
+
+  gui.imHide(images[2])
+
+  r = input('Hit any key')
+
+  gui.imHide('9')
+  gui.viewManager()
+
+  gui.imClose('4')
+  gui.viewManager()
+
+  gui.listViews()
+
+  r = input('Hit any key to quit')
+  return 0
 
   #gSmilGui.viewManager()
 
