@@ -1,6 +1,9 @@
 
 # smilPyQtGui
 
+## Why smilPyQtGui
+
+## Sample code
 
 ```Python
 import smilPython as sp
