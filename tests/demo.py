@@ -7,7 +7,7 @@ import argparse as ap
 import smilPython as sp
 
 #from smilPyQtMain import *
-import smilPyQtMain as sg
+import smilPyQtGui as sg
 
 #from smilPyQtGui import *
 

@@ -94,7 +94,7 @@ sp2npTypes = {
 #  #    #  #    #  #       #   ##  #
 #   ####    ####   ######  #    #  ######
 #
-class smilGraphicsView(QGraphicsView):
+class _smilGraphicsView(QGraphicsView):
   def __init__(self, parent):
     super().__init__()
     self.parent = parent
@@ -324,7 +324,7 @@ class smilQtView(QMainWindow):
     hbox.addWidget(self.lbl2)
     hbox.addWidget(self.slider)
 
-    self.smScene = smilGraphicsView(self)
+    self.smScene = _smilGraphicsView(self)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.lbl1)
