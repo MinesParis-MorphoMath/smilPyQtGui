@@ -1,27 +1,15 @@
 
 TO DO
 
-* Images 3D
-  - OK
-
 * Images RGB
 
 * Image update - sp.modified()
-  - Reload OK
   - How to handle "modified" signals ?
 
 * Magnifier - with or without overlay ???
 
 * Link manager from images
-  - Dialogue de configuration OK
-  - display pixel value OK
-  - TODO
-    - management of scroll bars on the linked image
-    - change slice on 3D images
-    - both OK
-
-* Close - destroy GUI - from menu
-  - OK
+  - BUG - trying to update original image when linked was closed
 
 * Destroy GUI - from library
 
@@ -29,9 +17,6 @@ TO DO
 
 * Help modal dialog
   - Created - need to add text - the last thing to do
-
-* About modal dialog
-  - OK
 
 * Save - from menu
   - OK, but ... Image is saved as RGB, even for BW or Gray images
@@ -42,25 +27,6 @@ TO DO
   QT_LOGGING_RULES="*.debug=false"
   export QT_LOGGING_RULES
 
-* Print - from menu
-  - OK
-
-* Set window title - use UUID ?
-  - OK
-
-* Histogramme
-  - make histogram map from image, OK
-  - still drawing with qwt to do
-  -OK
-
-* Labeled images
-  - OK
-
-* Set image name
-  - OK
-
-* zoom of scaled views
-    OK
 
 * set same window size of linked images
   needed to synchronize scrollBars
@@ -69,5 +35,4 @@ TO DO
 
 * Code can be improved
   - use Signals whenever possible ?
-  - rearrange code smilPyQtGui may be the parent class of everything
 

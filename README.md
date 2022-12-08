@@ -1,7 +1,11 @@
 
 # smilPyQtGui
 
+This prackage provides a graphical user interface to be used with the [Smil](https://smil.cmm.minesparis.psl.eu) library.
+
 ## Why smilPyQtGui
+
+
 
 ## Sample code
 
