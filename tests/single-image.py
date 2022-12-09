@@ -1,5 +1,10 @@
+#! /usr/bin/env python3
+#
+# This script just reads an image file, create another one from the erosion
+#   of the first one and show both
 
 import sys
+
 import smilPython as sp
 import smilPyQtGui as sg
 

@@ -1,37 +1,14 @@
+#! /usr/bin/env python3
+#
+# This script creates some images allowing to test most features of this
+#   package
 
 import os
 import sys
 
-import argparse as ap
-
 import smilPython as sp
-
-#from smilPyQtMain import *
 import smilPyQtGui as sg
 
-#from smilPyQtGui import *
-
-# -----------------------------------------------------------------------------
-#
-#
-debug = False
-verbose = False
-
-
-def getCliArgs():
-  parser = ap.ArgumentParser()
-
-  parser.add_argument('--debug', help='', action="store_true")
-  parser.add_argument('--verbose', help='', action="store_true")
-
-  cli = parser.parse_args()
-
-  global debug, verbose
-
-  debug = cli.debug
-  verbose = cli.verbose
-
-  return cli
 
 # =============================================================================
 #
@@ -170,8 +147,4 @@ def main(cli, args=None):
 #
 #
 if __name__ == '__main__':
-  os.environ['QT_LOGGING_RULES'] = "*.debug=false"
-
-  cli = getCliArgs()
-
-  sys.exit(main(cli, sys.argv))
+  sys.exit(main(sys.argv))

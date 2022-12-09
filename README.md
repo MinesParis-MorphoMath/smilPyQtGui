@@ -56,14 +56,14 @@ git clone https://github.com/MinesParis-MorphoMath/smilPyQtGui.git
 You must decide where to install it :
 
   - system wide : ```DEST=/usr/local/lib/python3.X/site-packages```
-  - user space : ```DEST=~/.local/lib/python3.8/site-packages/```
+  - user space : ```DEST=~/.local/lib/python3.8/site-packages```
 
 And just do :
 
 ```bash
 mkdir -p $DEST
 cd smilPyQtGui/src
-rsync -av --delete smilPyQtGui $DEST
+rsync -av --delete smilPyQtGui $DEST/
 ```
 
 ## Available functions in the Python interface
