@@ -53,11 +53,11 @@ import datetime
 import math as m
 import numpy as np
 
-
 import smilPython as sp
 
 from smilPyQtView import *
 from smilPyQtDlog import *
+
 
 # =============================================================================
 #
@@ -69,7 +69,7 @@ class smilGui:
   def __init__(self, argv=[]):
     self.app = QApplication(argv)
 
-  def imView(self, img = None):
+  def imView(self, img=None):
     """ Create a view window for an image
     """
     if img is None:
@@ -77,7 +77,7 @@ class smilGui:
 
     self.last += 1
     uuid = str(self.last)
-    view = smilQtView(img, uuid = uuid)
+    view = smilQtView(img, uuid=uuid)
     view.parent = self
     self.views[uuid] = view
 
@@ -90,7 +90,7 @@ class smilGui:
     else:
       view.hide()
 
-  def imSetVisible(self, img = None, visible=True):
+  def imSetVisible(self, img=None, visible=True):
     """Set the visible state of the image window
 
     Parameters
@@ -112,7 +112,7 @@ class smilGui:
         self._setVis(self.views[k], visible)
         break
 
-  def imSetVisibleAll(self, img = None, visible=True):
+  def imSetVisibleAll(self, visible=True):
     """Set the visible state of all image windows
 
     Parameters
@@ -124,7 +124,7 @@ class smilGui:
       self.setVis(self.views[k], visible)
 
   #
-  def imHide(self, img = None):
+  def imHide(self, img=None):
     if isinstance(img, (str, int)):
       k = str(img)
       if k in self.views.keys():
@@ -140,7 +140,7 @@ class smilGui:
       self.views[k].hide()
 
   #
-  def imClose(self, img = None):
+  def imClose(self, img=None):
     if isinstance(img, (str, int)):
       k = str(img)
       if k in self.views.keys():
@@ -157,9 +157,9 @@ class smilGui:
 
   def imCloseAll(self):
     for k in self.views.keys():
-        self.views[k].close()
-        if k in self.views.keys():
-          del self.views[k]
+      self.views[k].close()
+      if k in self.views.keys():
+        del self.views[k]
 
   def getCopy(self):
     res = {}
@@ -167,7 +167,7 @@ class smilGui:
       res[k] = self.views[k]
     return res
 
-  def unregister(self, uuid = None):
+  def unregister(self, uuid=None):
     if uuid in self.views.keys():
       del self.views[uuid]
 
@@ -185,11 +185,13 @@ class smilGui:
     for k in self.views.keys():
       print("{:>5} - {:}".format(k, self.views[k].imName))
 
+
 # =============================================================================
 #
 #
 def dummy(cli):
   return 0
+
 
 # =============================================================================
 #
@@ -197,11 +199,11 @@ def dummy(cli):
 def main(args=None):
   return 0
 
+
 # =============================================================================
 #
 #
 if __name__ == '__main__':
   import sys
-
 
   sys.exit(main(sys.argv))
