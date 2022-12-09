@@ -682,11 +682,18 @@ class ViewManagerDialog(QDialog):
 
     self.setLayout(tout)
 
+  #
   def redrawList(self):
     for row in range(0, self.list_all.count()):
       item = self.list_all.item(row)
       data = item.data
       item.setText(data.text())
+
+  def _setVis(self, view, visible):
+    if visible:
+      view.show()
+    else:
+      view.hide()
 
   def hide(self):
     row = self.list_all.currentRow()
@@ -695,17 +702,14 @@ class ViewManagerDialog(QDialog):
 
     item = self.list_all.currentItem()
     data = item.data.data
-    data.hide()
+    self._setVis(data, False)
     self.redrawList()
 
   def hideall(self):
-    #print("Entering show all")
     for row in range(0, self.list_all.count()):
-      #print("  handling row {:d}".format(row))
       item = self.list_all.item(row)
       data = item.data.data
-      #print("  image name : {:s}".format(item.data.data.imName))
-      data.hide()
+      self._setVis(data, False)
     self.redrawList()
 
   def show(self):
@@ -715,19 +719,18 @@ class ViewManagerDialog(QDialog):
 
     item = self.list_all.currentItem()
     data = item.data.data
-    data.show()
+    self._setVis(data, True)
     self.redrawList()
 
   def showall(self):
-    #print("Entering show all")
     for row in range(0, self.list_all.count()):
       #print("  handling row {:d}".format(row))
       item = self.list_all.item(row)
       data = item.data.data
-      #print("  image name : {:s}".format(item.data.data.imName))
-      data.show()
+      self._setVis(data, True)
     self.redrawList()
 
+  #
   def accept(self):
     self.ok = True
     self.close()

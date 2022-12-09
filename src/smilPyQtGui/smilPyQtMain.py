@@ -69,7 +69,9 @@ class smilGui:
   def __init__(self, argv=[]):
     self.app = QApplication(argv)
 
-  def imShow(self, img = None):
+  def imView(self, img = None):
+    """ Create a view window for an image
+    """
     if img is None:
       return None
 
@@ -81,11 +83,53 @@ class smilGui:
 
     return view
 
+  #
+  def _setVis(self, view, visible):
+    if visible:
+      view.show()
+    else:
+      view.hide()
+
+  def imSetVisible(self, img = None, visible=True):
+    """Set the visible state of the image window
+
+    Parameters
+    ----------
+    img :
+      The image variable or the identifier (str or int)
+    visible:
+      The new state to be set (True if visible and False to hide)
+    """
+
+    if isinstance(img, (str, int)):
+      k = str(img)
+      if k in self.views.keys():
+        self._setVis(self.views[k], visible)
+        return
+
+    for k in self.views.keys():
+      if id(self.views[k].image) == id(img):
+        self._setVis(self.views[k], visible)
+        break
+
+  def imSetVisibleAll(self, img = None, visible=True):
+    """Set the visible state of all image windows
+
+    Parameters
+    ----------
+    visible:
+      The new state to be set (True if visible and False to hide)
+    """
+    for k in self.views.keys():
+      self.setVis(self.views[k], visible)
+
+  #
   def imHide(self, img = None):
     if isinstance(img, (str, int)):
       k = str(img)
       if k in self.views.keys():
         self.views[k].hide()
+      return
     for k in self.views.keys():
       if id(self.views[k].image) == id(img):
         self.views[k].hide()
@@ -95,6 +139,7 @@ class smilGui:
     for k in self.views.keys():
       self.views[k].hide()
 
+  #
   def imClose(self, img = None):
     if isinstance(img, (str, int)):
       k = str(img)

@@ -142,7 +142,7 @@ def main(cli, args=None):
 
   views = []
   for im in images:
-    gui.imShow(im)
+    gui.imView(im)
 
   r = input("Hit any key to continue")
 
