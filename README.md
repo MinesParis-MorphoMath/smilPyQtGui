@@ -66,31 +66,45 @@ cd smilPyQtGui/src
 rsync -av --delete smilPyQtGui $DEST/
 ```
 
-## Available functions in the Python interface
+## smilPyQtGui Quick Reference
 
+All applications must import modules ```smilPython``` and ```smilPyQtGui``` :
 
-  - ```imView(img = None)``` :   
+```Python
+import smilPython as sp
+import smilPyQtGui as sg
+```
+
+And the application must initialize the ```smilGui``` class :
+
+```Python
+gui = sg.smilGui()
+```
+
+### Methods in ```smilGui()``` class
+
+  - ```imView(img=None)``` :
     Create a view for the Smil image ```img```
-  - ```imSetVisible(img = None, visible=True)``` :   
+  - ```imSetVisible(img=None, visible=True)``` :
     show/hide the view attached to the image ```img```, depending on the value of ```visible``` parameter
-  - ```imSetVisibleAll(visible=True)``` :   
+  - ```imSetVisibleAll(visible=True)``` :
     the same as above but for all views
-  - ```imHide(img = None)``` :  
-    The same as ```imSetVisible(img, False)``` 
-  - ```imHideAll()```  
-    The same as ```imSetVisibleAll(False)``` 
-  - ```imShow(img = None)```  
-    The same as ```imSetVisible(img, True)``` 
-  - ```imShowAll()```  
-    The same as ```imSetVisibleAll(True)``` 
-  - ```imClose(img = None)``` :  
-    Close the view of image ```img``` 
-  - ```imCloseAll()``` :  
-    Close all views 
-  - ```viewManager()```  
+  - ```imHide(img=None)``` :
+    The same as ```imSetVisible(img=None, visible=False)```
+  - ```imHideAll()```
+    The same as ```imSetVisibleAll(visible=False)```
+  - ```imShow(img=None)```
+    The same as ```imSetVisible(img=None, visible=True)```
+  - ```imShowAll()```
+    The same as ```imSetVisibleAll(visible=True)```
+  - ```imClose(img=None)``` :
+    Close the view of image ```img```
+  - ```imCloseAll()``` :
+    Close all views
+  - ```viewManager()```
     Open an window allowing to manage the views : show/hide/close
-  - ```listViews()```:  
-    Print on the terminal the list of views 
+  - ```listViews()```:
+    Print on the terminal the list of views
 
 
 
