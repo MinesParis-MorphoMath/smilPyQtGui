@@ -57,6 +57,7 @@ You must decide where to install it :
 
   - system wide : ```DEST=/usr/local/lib/python3.X/site-packages```
   - user space : ```DEST=~/.local/lib/python3.8/site-packages```
+  - non standard place : Ex. ```DEST=$HOME/myPythonPackages```
 
 And just do :
 
@@ -64,6 +65,12 @@ And just do :
 mkdir -p $DEST
 cd smilPyQtGui/src
 rsync -av --delete smilPyQtGui $DEST/
+```
+
+If you install it in a non standard place you'll need to adjuste the variable ```PYTHONPATH``` as :
+
+```bash
+export PYTHONPATH=${DEST}:$PYTHONPATH
 ```
 
 ## smilPyQtGui Quick Reference
