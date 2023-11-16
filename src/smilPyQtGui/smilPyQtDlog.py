@@ -75,7 +75,7 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
 
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QGridLayout
 
-owtok = False
+qwtok = False
 try:
   # PythonQwt
   # See : https://pypi.org/project/PythonQwt/
