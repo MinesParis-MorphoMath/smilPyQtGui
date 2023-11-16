@@ -23,8 +23,8 @@ for m in all__:
         globals()[k] = d[k]
       smGood.append(m)
       smMods[m] = True
-    except:
-      print(" Error loading Smil submodule : ", m)
+    except Exception as e:
+      print(" Error loading Smil submodule : ", m, e)
       smBad.append(m)
       smMods[m] = False
       pass

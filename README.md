@@ -1,8 +1,7 @@
 
 # smilPyQtGui
 
-This package provides a graphical user interface to be used with the
-[Smil](https://smil.cmm.minesparis.psl.eu) (Simple Morphological Image Library).
+This package provides a graphical user interface to be used with [Smil](https://smil.cmm.minesparis.psl.eu) (Simple Morphological Image Library).
 
 *Smil* library has, integrated into it, some code allowing the visualisation of images being handled by the library. This code is based on the *Qt* library. This part of code has been a problem as some Linux distributions comes with recent versions of *Qt*, while others come with very old versions. At the same time, *Smil* developpers must be able to maintain the code compatibility with a large range of versions while following new versions of *Qt*. This is sometimes harder than maintaining the real goal of the library.
 
@@ -10,7 +9,7 @@ This package has almost the same features of the integrated visualisation featur
 
 The current default behaviour of *Smil* compile time configuration is to enable the search for *Qt* libraries. In a near future this will be disabled and no more included in packaged distributions of *Smil*
 
-## Example code using smilPyQtGui
+## Sample code using smilPyQtGui
 
 This is a minimal
 ```Python

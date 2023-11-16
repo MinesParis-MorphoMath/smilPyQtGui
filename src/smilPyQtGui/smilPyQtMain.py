@@ -40,23 +40,11 @@
 #           Just created
 #
 
-import os
 import sys
 
-#import glob
-#import psutil
-
-#import fnmatch as fn
-import re
-import datetime
-
-import math as m
-import numpy as np
-
-import smilPython as sp
-
-from smilPyQtView import *
-from smilPyQtDlog import *
+from smilPyQtView import smilQtView
+from PyQt5.QtWidgets import QApplication
+from smilPyQtDlog import ViewManagerDialog
 
 
 # =============================================================================
@@ -179,18 +167,11 @@ class smilGui:
     dAll = self.views
     for k in dAll.keys():
       dTmp[k] = dAll[k]
-    w = ViewManagerDialog(dTmp).run()
+    wdlog = ViewManagerDialog(dTmp).run()
 
   def listViews(self):
     for k in self.views.keys():
       print("{:>5} - {:}".format(k, self.views[k].imName))
-
-
-# =============================================================================
-#
-#
-def dummy(cli):
-  return 0
 
 
 # =============================================================================
@@ -204,6 +185,5 @@ def main(args=None):
 #
 #
 if __name__ == '__main__':
-  import sys
 
   sys.exit(main(sys.argv))

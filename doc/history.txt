@@ -1,0 +1,14 @@
+
+https://packaging.python.org/en/latest/tutorials/packaging-projects/
+  
+vi pyproject.toml
+touch LICENSE
+python3 -m pip install --upgrade build
+python3 -m build
+ll dist/
+tar tzvf dist/smilPyQtGui-0.0.1.tar.gz 
+python3 -m pip install --upgrade twine
+vi LICENSE 
+ll src/
+ll doc/
+more doc/TODO.txt 

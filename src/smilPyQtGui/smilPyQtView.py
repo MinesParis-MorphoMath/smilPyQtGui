@@ -40,33 +40,25 @@
 #           Just created
 #
 
-import os
 import sys
 import inspect
-
-#import glob
-#import psutil
-
-#import fnmatch as fn
-import re
-import datetime
-
-import math as m
 import numpy as np
 
 import smilPython as sp
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize
-from PyQt5.QtGui import QImage, QPixmap, QPalette, QPainter, QIcon, QColor, qRgb
+from PyQt5.QtGui import QImage, QPixmap, QPainter,  QColor, qRgb
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
-from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
-                             QMainWindow, QMenu, QAction, qApp, QFileDialog,
-                             QInputDialog, QStatusBar, QTextEdit, QWidget,
-                             QDialog, QGraphicsView, QGraphicsScene, QSlider,
-                             QLineEdit)
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import (QLabel,  QMessageBox,
+                             QMainWindow,  QAction,  QFileDialog,
+                            QStatusBar,  QWidget,
+                             QDialog, QGraphicsView, QGraphicsScene, QSlider)
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 
-from smilPyQtDlog import *
+#from smilPyQtDlog import *
+from smilPyQtDlog import (InfoNotYet, ShowAboutDialog, HelpDialog,
+                          ShowImageInfo, smilHistogram, LinkImagesDialog,
+                          smilGetImageName)
 
 # -----------------------------------------------------------------------------
 #
@@ -98,7 +90,7 @@ class _smilGraphicsView(QGraphicsView):
   def __init__(self, parent):
     super().__init__()
     self.parent = parent
-    width, height = parent.width(), parent.height()
+    #width, height = parent.width(), parent.height()
 
     self.baseColorTable = []
     self.rainbowColorTable = []
@@ -141,7 +133,7 @@ class _smilGraphicsView(QGraphicsView):
 
     w = image.getWidth()
     h = image.getHeight()
-    d = image.getDepth()
+    #d = image.getDepth()
     #w -= w % 4
     #h -= h % 4
     # print('  imt : {:4d} {:4d} {:4d}'.format(w, h, d))
@@ -598,7 +590,7 @@ class smilQtView(QMainWindow):
               Bitmap Files (*.bmp);;GIF Files (*.gif)")
 
     pixmap = self.smScene.qPixmap
-    if image_file and pixmap.isNull() == False:
+    if image_file and not pixmap.isNull():
       pixmap.save(image_file)
     else:
       QMessageBox.information(self, "Not Saved", "Image not saved.",
@@ -875,6 +867,4 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-  import sys
-
   sys.exit(main(sys.argv))

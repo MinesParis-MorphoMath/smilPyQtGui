@@ -1,0 +1,30 @@
+
+
+[project]
+name = "smilPyQtGui"
+version = "0.1.1"
+
+authors = [
+  { name="Jose-Marcio Martins da Cruz", email="jose-marcio.martins@minesparis.psl.eu" },
+]
+
+description = "A small example package"
+
+readme = "README.md"
+
+requires-python = ">=3.8"
+#install_requires = [
+#  'pythonqwt>=0.10.5',
+#  'pyqt5>=5.15'
+#]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/pypa/sampleproject"
+"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
+

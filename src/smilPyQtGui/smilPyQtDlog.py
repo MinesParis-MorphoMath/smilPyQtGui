@@ -75,7 +75,27 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
 
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QGridLayout
 
-from PyQt5 import Qwt
+owtok = False
+try:
+  # PythonQwt
+  # See : https://pypi.org/project/PythonQwt/
+  # See https://pythonqwt.readthedocs.io/
+  # conda install -c conda-forge pythonqwt
+  # pip install PythonQwt
+  import qwt as Qwt
+  qwtok = True
+except:
+  pass
+
+if not qwtok:
+  try:
+    # PyQt-Qwt
+    # See https://github.com/GauiStori/PyQt-Qwt/
+    from PyQt5 import Qwt
+    qwtok = True
+  except:
+    pass
+
 
 # -----------------------------------------------------------------------------
 #
@@ -788,7 +808,7 @@ class smilHistogram(QDialog):
 
     curveSin = Qwt.QwtPlotCurve()
     #curveSin.setTitle("Some Points")
-    curveSin.setPen(Qt.red, 1)
+    curveSin.setPen(Qt.red, 1, Qt.SolidLine)
     curveSin.setRenderHint(Qwt.QwtPlotItem.RenderAntialiased, True)
 
     #    curveCos = Qwt.QwtPlotCurve()
@@ -811,10 +831,12 @@ class smilHistogram(QDialog):
     xmax = self.view.image.getDataTypeMax()
     self.plot.setAxisScale(Qwt.QwtPlot.xBottom, -1, xmax + 1, (xmax + 1) // 8)
 
-    zoomer = Qwt.QwtPlotZoomer(Qwt.QwtPlot.xBottom, Qwt.QwtPlot.yLeft,
-                               self.plot.canvas())
-    zoomer.setZoomBase(False)
-    zoomer.zoom(0)
+    # QwtPlotZoomer not implemented on pythonqwt
+    # see https://pythonqwt.readthedocs.io/_/downloads/en/latest/pdf/
+    #zoomer = Qwt.QwtPlotZoomer(Qwt.QwtPlot.xBottom, Qwt.QwtPlot.yLeft,
+    #                           self.plot.canvas())
+    #zoomer.setZoomBase(False)
+    #zoomer.zoom(0)
 
     self.plot.setGeometry(0, 0, 600, 400)
 
