@@ -50,6 +50,18 @@ from smilPyQtDlog import ViewManagerDialog
 # =============================================================================
 #
 #
+try:
+  __IPYTHON__
+  import IPython
+  if IPython.version_info[0] >= 5:
+    get_ipython().magic("%gui qt")
+except NameError:
+  # print("err")
+  pass
+
+# =============================================================================
+#
+#
 class smilGui:
   last = 0
   views = {}
@@ -143,11 +155,23 @@ class smilGui:
           del self.views[k]
         break
 
-  def imCloseAll(self):
+  def XimCloseAll(self):
     for k in self.views.keys():
       self.views[k].close()
       if k in self.views.keys():
         del self.views[k]
+
+  def imCloseAll(self):
+    doAgain = True
+    while doAgain:
+      doAgain = False
+      for k in self.views.keys():
+        self.views[k].close()
+        if k in self.views.keys():
+          del self.views[k]
+          doAgain = True
+        if doAgain:
+          break
 
   def getCopy(self):
     res = {}
@@ -177,13 +201,11 @@ class smilGui:
 # =============================================================================
 #
 #
-def main(args=None):
-  return 0
-
-
-# =============================================================================
-#
-#
 if __name__ == '__main__':
+  # =============================================================================
+  #
+  #
+  def main(args=None):
+    return 0
 
   sys.exit(main(sys.argv))

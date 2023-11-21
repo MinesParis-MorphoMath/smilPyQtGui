@@ -75,7 +75,7 @@ from PyQt5.QtWidgets import (QLabel, QSizePolicy, QScrollArea, QMessageBox,
 
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QGridLayout
 
-qwtok = False
+QwtModule = None
 try:
   # PythonQwt
   # See : https://pypi.org/project/PythonQwt/
@@ -83,16 +83,13 @@ try:
   # conda install -c conda-forge pythonqwt
   # pip install PythonQwt
   import qwt as Qwt
-  qwtok = True
+  QwtModule = "PythonQwt"
 except:
-  pass
-
-if not qwtok:
   try:
     # PyQt-Qwt
     # See https://github.com/GauiStori/PyQt-Qwt/
     from PyQt5 import Qwt
-    qwtok = True
+    QwtModule = "PyQt-Qwt"
   except:
     pass
 
@@ -771,6 +768,11 @@ class ViewManagerDialog(QDialog):
 class smilHistogram(QDialog):
   def __init__(self, view, x, y):
     super().__init__()
+
+    if QwtModule is None:
+      ShowMessage('PythonQwt - not installed', 'Module Qwt not installed')
+      self.close()
+      return
 
     self.view = view
     self.title = view.imName

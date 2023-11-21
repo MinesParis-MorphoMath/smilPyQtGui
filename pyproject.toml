@@ -2,7 +2,7 @@
 
 [project]
 name = "smilPyQtGui"
-version = "0.1.1"
+version = "0.3.3"
 
 authors = [
   { name="Jose-Marcio Martins da Cruz", email="jose-marcio.martins@minesparis.psl.eu" },

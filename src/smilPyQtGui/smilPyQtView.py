@@ -56,9 +56,9 @@ from PyQt5.QtWidgets import (QLabel,  QMessageBox,
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 
 #from smilPyQtDlog import *
-from smilPyQtDlog import (InfoNotYet, ShowAboutDialog, HelpDialog,
-                          ShowImageInfo, smilHistogram, LinkImagesDialog,
-                          smilGetImageName)
+from smilPyQtDlog import (InfoNotYet, ShowMessage, ShowAboutDialog,
+                          HelpDialog, ShowImageInfo, smilHistogram,
+                          LinkImagesDialog, smilGetImageName, QwtModule)
 
 # -----------------------------------------------------------------------------
 #
@@ -677,6 +677,10 @@ class smilQtView(QMainWindow):
                             scale=self.scaleValue)
 
   def fn_histogram(self):
+    if QwtModule is None:
+      ShowMessage('PythonQwt - not installed', 'Module PythonQwt not installed')
+      return
+
     histoMap = sp.histogram(self.image)
     x = histoMap.keys()
     y = histoMap.values()
@@ -858,13 +862,11 @@ class smilQtView(QMainWindow):
 #
 
 
-# =============================================================================
-#
-#
-def main(args=None):
-
-  print("Not yet...")
-
-
 if __name__ == '__main__':
+  # =============================================================================
+  #
+  #
+  def main(args=None):
+    print("Not yet...")
+
   sys.exit(main(sys.argv))

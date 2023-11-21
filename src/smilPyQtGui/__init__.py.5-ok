@@ -20,5 +20,3 @@ for m in _all:
 
 del _all, m, d, mod, k
 
-__version__ = "0.3.3"
-
